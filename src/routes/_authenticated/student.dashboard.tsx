@@ -109,7 +109,7 @@ function Dashboard() {
         </motion.div>
       )}
 
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="hidden md:grid md:grid-cols-4 gap-4">
         {[
           { label: "Positions", value: data?.positionCount ?? 0, icon: Calendar, color: "text-primary" },
           { label: "Candidates", value: data?.candidateCount ?? 0, icon: Users, color: "text-gold" },
