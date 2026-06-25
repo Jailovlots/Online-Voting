@@ -405,7 +405,7 @@ export const uploadImage = createServerFn({ method: 'POST' })
       .parse(d),
   )
   .handler(async (ctx) => {
-    const { base64Data, fileName } = ctx.data;
+    const { base64Data } = ctx.data;
     
     // Parse the base64 string
     const match = base64Data.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
@@ -414,7 +414,6 @@ export const uploadImage = createServerFn({ method: 'POST' })
     }
     
     const mimeType = match[1];
-    const base64Content = match[2];
     
     // Check if mimeType is allowed
     const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
@@ -422,31 +421,9 @@ export const uploadImage = createServerFn({ method: 'POST' })
       throw new Error('Unsupported image format. Allowed formats: JPEG, PNG, GIF, WEBP, SVG.');
     }
     
-    // Determine extension
-    let ext = '.png';
-    if (mimeType === 'image/jpeg') ext = '.jpg';
-    else if (mimeType === 'image/gif') ext = '.gif';
-    else if (mimeType === 'image/webp') ext = '.webp';
-    else if (mimeType === 'image/svg+xml') ext = '.svg';
-    
-    // Import Node.js filesystem modules dynamically to avoid bundling in client
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const { randomUUID } = await import('crypto');
-    
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    
-    // Ensure uploads directory exists
-    await fs.mkdir(uploadsDir, { recursive: true });
-    
-    const uniqueName = `${randomUUID()}${ext}`;
-    const filePath = path.join(uploadsDir, uniqueName);
-    
-    // Write buffer to file
-    const buffer = Buffer.from(base64Content, 'base64');
-    await fs.writeFile(filePath, buffer);
-    
+    // In serverless environment, local filesystem is read-only.
+    // Instead of writing to file, return the base64 data URL directly.
     return {
-      url: `/api/uploads/${uniqueName}`
+      url: base64Data
     };
   });

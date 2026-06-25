@@ -11,6 +11,52 @@ interface ImageUploadProps {
   uploadImageFn: (args: { data: { base64Data: string; fileName: string } }) => Promise<{ url: string }>;
 }
 
+const compressImage = (file: File, fallbackBase64: string): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(fallbackBase64);
+        return;
+      }
+
+      // Resize logic (limit to maximum 800px width or height)
+      const MAX_WIDTH = 800;
+      const MAX_HEIGHT = 800;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // Preserve alpha for PNG/SVG, otherwise export as compressed JPEG
+      const outputType = file.type === "image/png" || file.type === "image/svg+xml" ? "image/png" : "image/jpeg";
+      const compressedDataUrl = canvas.toDataURL(outputType, 0.75);
+      resolve(compressedDataUrl);
+    };
+    img.onerror = () => {
+      resolve(fallbackBase64);
+    };
+  });
+};
+
 export function ImageUpload({
   value,
   onChange,
@@ -40,13 +86,31 @@ export function ImageUpload({
     const toastId = toast.loading("Uploading image...");
 
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(file);
-      const base64Data = await base64Promise;
+      let base64Data: string;
+
+      if (file.type === "image/svg+xml") {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(file);
+        base64Data = await base64Promise;
+      } else {
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(file);
+        const rawBase64 = await base64Promise;
+
+        try {
+          base64Data = await compressImage(file, rawBase64);
+        } catch {
+          base64Data = rawBase64;
+        }
+      }
 
       const res = await uploadImageFn({
         data: {
