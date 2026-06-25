@@ -1,0 +1,10 @@
+{
+  "functions": {
+    ".vercel/output/functions/__server.func": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/__server" }
+  ]
+}
