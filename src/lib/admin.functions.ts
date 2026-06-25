@@ -90,7 +90,7 @@ export const upsertCandidate = createServerFn({ method: 'POST' })
         party: z.string().max(80).optional().nullable(),
         bio: z.string().max(800).optional().nullable(),
         platform: z.string().max(800).optional().nullable(),
-        photo_url: z.string().url().optional().nullable(),
+        photo_url: z.string().optional().nullable(),
         approved: z.boolean().optional(),
       })
       .parse(d),
@@ -201,7 +201,7 @@ export const updateMyProfile = createServerFn({ method: 'POST' })
         full_name: z.string().min(2).max(120).optional(),
         course: z.string().max(80).optional().nullable(),
         year_level: z.coerce.number().min(1).max(6).optional().nullable(),
-        photo_url: z.string().url().optional().nullable(),
+        photo_url: z.string().optional().nullable(),
       })
       .parse(d),
   )
@@ -254,6 +254,28 @@ export const updateStudentRegistration = createServerFn({ method: 'POST' })
       [data.is_registered, data.id]
     );
     await log(context, 'student_registration_update', data.id, { is_registered: data.is_registered });
+    return { ok: true };
+  });
+
+export const deleteStudent = createServerFn({ method: 'POST' })
+  .middleware([requireAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async (ctx) => {
+    const context = ctx.context as any;
+    const data = ctx.data as { id: string };
+    await ensureAdmin(context);
+
+    // Get student details for logging
+    const { rows: current } = await context.db.query(
+      'SELECT full_name, email FROM public.profiles WHERE id = $1',
+      [data.id]
+    );
+    const name = current[0]?.full_name ?? 'unknown';
+    const email = current[0]?.email ?? 'unknown';
+
+    // Delete the user (cascades to profiles and roles)
+    await context.db.query('DELETE FROM public.users WHERE id = $1', [data.id]);
+    await log(context, 'student_delete', data.id, { name, email });
     return { ok: true };
   });
 
@@ -370,4 +392,61 @@ export const getVoterParticipationReport = createServerFn({ method: 'POST' })
     });
 
     return report;
+  });
+
+export const uploadImage = createServerFn({ method: 'POST' })
+  .middleware([requireAuth])
+  .inputValidator((d: { base64Data: string; fileName: string }) =>
+    z
+      .object({
+        base64Data: z.string(),
+        fileName: z.string(),
+      })
+      .parse(d),
+  )
+  .handler(async (ctx) => {
+    const { base64Data, fileName } = ctx.data;
+    
+    // Parse the base64 string
+    const match = base64Data.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
+    if (!match) {
+      throw new Error('Invalid image data format. Expected base64 data URI.');
+    }
+    
+    const mimeType = match[1];
+    const base64Content = match[2];
+    
+    // Check if mimeType is allowed
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedMimeTypes.includes(mimeType)) {
+      throw new Error('Unsupported image format. Allowed formats: JPEG, PNG, GIF, WEBP, SVG.');
+    }
+    
+    // Determine extension
+    let ext = '.png';
+    if (mimeType === 'image/jpeg') ext = '.jpg';
+    else if (mimeType === 'image/gif') ext = '.gif';
+    else if (mimeType === 'image/webp') ext = '.webp';
+    else if (mimeType === 'image/svg+xml') ext = '.svg';
+    
+    // Import Node.js filesystem modules dynamically to avoid bundling in client
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const { randomUUID } = await import('crypto');
+    
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
+    
+    // Ensure uploads directory exists
+    await fs.mkdir(uploadsDir, { recursive: true });
+    
+    const uniqueName = `${randomUUID()}${ext}`;
+    const filePath = path.join(uploadsDir, uniqueName);
+    
+    // Write buffer to file
+    const buffer = Buffer.from(base64Content, 'base64');
+    await fs.writeFile(filePath, buffer);
+    
+    return {
+      url: `/api/uploads/${uniqueName}`
+    };
   });

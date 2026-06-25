@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getStudents, updateStudentRegistration } from "@/lib/admin.functions";
+import { getStudents, updateStudentRegistration, deleteStudent } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, X, UserCheck, UserX } from "lucide-react";
+import { Check, X, UserCheck, UserX, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/students")({
   head: () => ({ meta: [{ title: "Students — Admin" }] }),
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin/students")({
 function AdminStudents() {
   const getStudentsFn = useServerFn(getStudents);
   const updateRegistrationFn = useServerFn(updateStudentRegistration);
+  const deleteStudentFn = useServerFn(deleteStudent);
 
   const { data: students, isLoading, refetch } = useQuery({
     queryKey: ["admin-students"],
@@ -29,6 +30,20 @@ function AdminStudents() {
       refetch();
     } catch (e: any) {
       toast.error(e.message || "Failed to update registration status.");
+    }
+  }
+
+  async function handleDelete(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteStudentFn({ data: { id } });
+      toast.success(`Student ${name} deleted successfully.`);
+      refetch();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete student.");
     }
   }
 
@@ -81,12 +96,12 @@ function AdminStudents() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right flex gap-2 justify-end items-center">
                       {student.is_registered ? (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 cursor-pointer"
                           onClick={() => toggleRegistration(student.id, true)}
                         >
                           <UserX className="size-4 mr-2" /> Revoke
@@ -95,12 +110,20 @@ function AdminStudents() {
                         <Button
                           variant="default"
                           size="sm"
-                          className="bg-primary hover:bg-primary/90"
+                          className="bg-primary hover:bg-primary/90 cursor-pointer"
                           onClick={() => toggleRegistration(student.id, false)}
                         >
                           <UserCheck className="size-4 mr-2" /> Approve
                         </Button>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                        onClick={() => handleDelete(student.id, student.full_name)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
                     </td>
                   </tr>
                 ))

@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Vote, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+
+const COURSES = ['BPED', 'BSIS', 'ACT'] as const;
 
 export const Route = createFileRoute('/auth')({
   head: () => ({ meta: [{ title: 'Sign in — StudentGov' }] }),
@@ -100,7 +103,16 @@ function AuthPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="course">Course</Label>
-                    <Input id="course" name="course" maxLength={80} />
+                    <Select name="course" required>
+                      <SelectTrigger id="course">
+                        <SelectValue placeholder="Select course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COURSES.map((c) => (
+                          <SelectItem key={c} value={c}>{c}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="year_level">Year</Label>

@@ -186,7 +186,7 @@ BEGIN
     VALUES (_admin_id, 'admin@school.edu', '$2a$10$3Ya31TutZjPUxrHAeOUGDOiVkHAWrkuYNCCCG1tzQqBIVY7fUYiFC');
 
     INSERT INTO public.profiles (id, student_id, full_name, email, course, year_level, is_registered)
-    VALUES (_admin_id, 'ADMIN-001', 'Administrator', 'admin@school.edu', 'IT', 4, true);
+    VALUES (_admin_id, 'ADMIN-001', 'Administrator', 'admin@school.edu', 'BSIS', 4, true);
 
     INSERT INTO public.user_roles (user_id, role)
     VALUES (_admin_id, 'admin'), (_admin_id, 'student');

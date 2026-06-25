@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedStudentRouteImport } from './routes/_authenticated/student'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as AuthenticatedStudentVoteRouteImport } from './routes/_authenticated/student.vote'
 import { Route as AuthenticatedStudentProfileRouteImport } from './routes/_authenticated/student.profile'
 import { Route as AuthenticatedStudentDashboardRouteImport } from './routes/_authenticated/student.dashboard'
@@ -57,6 +58,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
+  id: '/api/uploads/$filename',
+  path: '/api/uploads/$filename',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedStudentVoteRoute =
   AuthenticatedStudentVoteRouteImport.update({
@@ -155,6 +161,7 @@ export interface FileRoutesByFullPath {
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/profile': typeof AuthenticatedStudentProfileRoute
   '/student/vote': typeof AuthenticatedStudentVoteRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/student/profile': typeof AuthenticatedStudentProfileRoute
   '/student/vote': typeof AuthenticatedStudentVoteRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_authenticated/student/dashboard': typeof AuthenticatedStudentDashboardRoute
   '/_authenticated/student/profile': typeof AuthenticatedStudentProfileRoute
   '/_authenticated/student/vote': typeof AuthenticatedStudentVoteRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/student/dashboard'
     | '/student/profile'
     | '/student/vote'
+    | '/api/uploads/$filename'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/student/dashboard'
     | '/student/profile'
     | '/student/vote'
+    | '/api/uploads/$filename'
   id:
     | '__root__'
     | '/'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/dashboard'
     | '/_authenticated/student/profile'
     | '/_authenticated/student/vote'
+    | '/api/uploads/$filename'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -267,6 +279,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/uploads/$filename': {
+      id: '/api/uploads/$filename'
+      path: '/api/uploads/$filename'
+      fullPath: '/api/uploads/$filename'
+      preLoaderRoute: typeof ApiUploadsFilenameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/student/vote': {
       id: '/_authenticated/student/vote'
@@ -470,6 +490,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

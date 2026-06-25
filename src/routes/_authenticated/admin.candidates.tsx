@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useServerFn } from "@tanstack/react-start";
-import { upsertCandidate, deleteCandidate } from "@/lib/admin.functions";
+import { upsertCandidate, deleteCandidate, uploadImage } from "@/lib/admin.functions";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/image-upload";
 
 export const Route = createFileRoute("/_authenticated/admin/candidates")({
   head: () => ({ meta: [{ title: "Candidates — Admin" }] }),
@@ -26,6 +27,7 @@ function AdminCandidates() {
   const delFn = useServerFn(deleteCandidate);
   const getCandidatesFn = useServerFn(getCandidates);
   const getPositionsFn = useServerFn(getPositions);
+  const uploadImageFn = useServerFn(uploadImage);
 
   const { data } = useQuery({
     queryKey: ["admin-candidates"],
@@ -41,6 +43,7 @@ function AdminCandidates() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [photoUrl, setPhotoUrl] = useState("");
 
   const upsert = useMutation({
     mutationFn: upFn,
@@ -53,8 +56,8 @@ function AdminCandidates() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  function openNew() { setEditing(null); setOpen(true); }
-  function openEdit(c: any) { setEditing(c); setOpen(true); }
+  function openNew() { setEditing(null); setPhotoUrl(""); setOpen(true); }
+  function openEdit(c: any) { setEditing(c); setPhotoUrl(c.photo_url ?? ""); setOpen(true); }
 
   return (
     <div className="space-y-6">
@@ -82,7 +85,16 @@ function AdminCandidates() {
               const pos = data.positions.find((p) => p.id === c.position_id);
               return (
                 <tr key={c.id} className="border-t">
-                  <td className="p-3 font-medium">{c.full_name}</td>
+                   <td className="p-3 font-medium flex items-center gap-3">
+                     {c.photo_url ? (
+                       <img src={c.photo_url} alt="" className="size-8 rounded-full object-cover border" />
+                     ) : (
+                       <div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                         {c.full_name?.charAt(0).toUpperCase()}
+                       </div>
+                     )}
+                     <span>{c.full_name}</span>
+                   </td>
                   <td className="p-3">{pos?.title}</td>
                   <td className="p-3 text-muted-foreground">{c.party}</td>
                   <td className="p-3">
@@ -118,7 +130,7 @@ function AdminCandidates() {
                   party: String(fd.get("party") || "") || null,
                   bio: String(fd.get("bio") || "") || null,
                   platform: String(fd.get("platform") || "") || null,
-                  photo_url: String(fd.get("photo_url") || "") || null,
+                  photo_url: photoUrl || null,
                   approved: true,
                 },
               });
@@ -135,7 +147,12 @@ function AdminCandidates() {
             </div>
             <div><Label>Full name</Label><Input name="full_name" defaultValue={editing?.full_name ?? ""} required /></div>
             <div><Label>Party</Label><Input name="party" defaultValue={editing?.party ?? ""} /></div>
-            <div><Label>Photo URL</Label><Input name="photo_url" type="url" defaultValue={editing?.photo_url ?? ""} /></div>
+            <ImageUpload
+              value={photoUrl}
+              onChange={setPhotoUrl}
+              uploadImageFn={uploadImageFn}
+              label="Candidate Photo"
+            />
             <div><Label>Bio</Label><Textarea name="bio" defaultValue={editing?.bio ?? ""} /></div>
             <div><Label>Platform</Label><Textarea name="platform" defaultValue={editing?.platform ?? ""} /></div>
             <DialogFooter><Button type="submit" disabled={upsert.isPending}>{upsert.isPending ? "Saving…" : "Save"}</Button></DialogFooter>

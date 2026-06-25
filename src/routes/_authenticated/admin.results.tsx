@@ -446,7 +446,7 @@ function FinalResults() {
       {activeTab === "participation" && (
         <div className="space-y-6">
           {/* Summary stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:hidden">
             <Card className="p-4 flex items-center gap-3">
               <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                 <Users className="size-5" />
