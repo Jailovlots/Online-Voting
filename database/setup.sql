@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS public.votes (
   candidate_id UUID NOT NULL REFERENCES public.candidates(id) ON DELETE CASCADE,
   voter_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (election_id, position_id, voter_hash)
+  UNIQUE (election_id, candidate_id, voter_hash)
 );
 
 -- ============ ANNOUNCEMENTS ============
