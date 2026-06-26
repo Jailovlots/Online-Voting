@@ -45,6 +45,7 @@ export const signUp = createServerFn({ method: 'POST' })
         student_id: z.string().min(1).max(40),
         course: z.string().max(80).optional(),
         year_level: z.coerce.number().min(1).max(6).optional(),
+        section: z.string().max(40).optional().nullable(),
       })
       .parse(d),
   )
@@ -70,9 +71,9 @@ export const signUp = createServerFn({ method: 'POST' })
 
     // Insert profile
     await db.query(
-      `INSERT INTO public.profiles (id, student_id, full_name, email, course, year_level)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [userId, data.student_id, data.full_name, email, data.course ?? null, data.year_level ?? null],
+      `INSERT INTO public.profiles (id, student_id, full_name, email, course, year_level, section)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, data.student_id, data.full_name, email, data.course ?? null, data.year_level ?? null, data.section ?? null],
     );
 
     // Assign student role

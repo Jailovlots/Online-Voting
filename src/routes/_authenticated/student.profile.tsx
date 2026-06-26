@@ -95,12 +95,13 @@ function ProfileForm({
             full_name: String(fd.get("full_name")),
             course: courseValue || null,
             year_level: Number(fd.get("year_level")) || null,
+            section: String(fd.get("section") || "").trim() || null,
             photo_url: photoUrl || null,
           });
         }}
       >
         <div><Label>Full name</Label><Input name="full_name" defaultValue={data.full_name} required /></div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div>
             <Label>Course</Label>
             <Select name="course" value={courseValue} onValueChange={setCourseValue}>
@@ -115,6 +116,7 @@ function ProfileForm({
             </Select>
           </div>
           <div><Label>Year level</Label><Input type="number" min={1} max={6} name="year_level" defaultValue={data.year_level ?? 1} /></div>
+          <div><Label>Section</Label><Input name="section" defaultValue={data.section ?? ""} placeholder="e.g. A" required maxLength={10} /></div>
         </div>
         <ImageUpload
           value={photoUrl}

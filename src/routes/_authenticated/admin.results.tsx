@@ -36,6 +36,8 @@ function FinalResults() {
   const [statusFilter, setStatusFilter] = useState<"all" | "voted" | "not_voted">("all");
   const [courseFilter, setCourseFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [sectionFilter, setSectionFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"name" | "student_id" | "course" | "year_level" | "section">("name");
 
   // Fetch elections list
   const { data: elections, isLoading: isElectionsLoading } = useQuery({
@@ -110,6 +112,12 @@ function FinalResults() {
     return Array.from(set).sort((a: any, b: any) => Number(a) - Number(b)) as number[];
   }, [participation]);
 
+  const sections = useMemo(() => {
+    if (!participation) return [];
+    const set = new Set(participation.map((p: any) => p.section).filter(Boolean));
+    return Array.from(set).sort() as string[];
+  }, [participation]);
+
   // Filtered participation list
   const filteredParticipation = useMemo(() => {
     if (!participation) return [];
@@ -123,9 +131,33 @@ function FinalResults() {
         (statusFilter === "not_voted" && !p.voted);
       const matchesCourse = courseFilter === "all" || p.course === courseFilter;
       const matchesYear = yearFilter === "all" || String(p.year_level) === yearFilter;
-      return matchesSearch && matchesStatus && matchesCourse && matchesYear;
+      const matchesSection = sectionFilter === "all" || p.section === sectionFilter;
+      return matchesSearch && matchesStatus && matchesCourse && matchesYear && matchesSection;
     });
-  }, [participation, searchTerm, statusFilter, courseFilter, yearFilter]);
+  }, [participation, searchTerm, statusFilter, courseFilter, yearFilter, sectionFilter]);
+
+  // Sorted participation list
+  const sortedParticipation = useMemo(() => {
+    const list = [...filteredParticipation];
+    return list.sort((a, b) => {
+      if (sortBy === "name") {
+        return a.full_name.localeCompare(b.full_name);
+      }
+      if (sortBy === "student_id") {
+        return a.student_id.localeCompare(b.student_id);
+      }
+      if (sortBy === "course") {
+        return (a.course || "").localeCompare(b.course || "");
+      }
+      if (sortBy === "year_level") {
+        return (a.year_level || 0) - (b.year_level || 0);
+      }
+      if (sortBy === "section") {
+        return (a.section || "").localeCompare(b.section || "");
+      }
+      return 0;
+    });
+  }, [filteredParticipation, sortBy]);
 
   // Stats calculations
   const totalRegistered = participation?.length ?? 0;
@@ -164,14 +196,15 @@ function FinalResults() {
 
   function exportParticipationCsv() {
     if (!participation || !selectedElection) return;
-    const rows = [["Student ID", "Name", "Email", "Course", "Year Level", "Status", "Voted At"]];
-    participation.forEach((p: any) => {
+    const rows = [["Student ID", "Name", "Email", "Course", "Year Level", "Section", "Status", "Voted At"]];
+    sortedParticipation.forEach((p: any) => {
       rows.push([
         p.student_id,
         p.full_name,
         p.email,
         p.course ?? "",
         p.year_level ? `Year ${p.year_level}` : "",
+        p.section ?? "",
         p.voted ? "VOTED" : "DID NOT VOTE",
         p.voted_at ? format(new Date(p.voted_at), "yyyy-MM-dd HH:mm:ss") : ""
       ]);
@@ -582,6 +615,35 @@ function FinalResults() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Section:</span>
+                <Select value={sectionFilter} onValueChange={setSectionFilter}>
+                  <SelectTrigger className="w-[110px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sections</SelectItem>
+                    {sections.map((s) => <SelectItem key={s} value={s}>Section {s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Sort by:</span>
+                <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+                  <SelectTrigger className="w-[120px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="student_id">Student ID</SelectItem>
+                    <SelectItem value="course">Course</SelectItem>
+                    <SelectItem value="year_level">Year Level</SelectItem>
+                    <SelectItem value="section">Section</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </Card>
 
@@ -593,18 +655,18 @@ function FinalResults() {
                   <tr>
                     <th className="px-6 py-3 font-medium">Student ID</th>
                     <th className="px-6 py-3 font-medium">Name</th>
-                    <th className="px-6 py-3 font-medium">Course & Year</th>
+                    <th className="px-6 py-3 font-medium">Course, Year & Section</th>
                     <th className="px-6 py-3 font-medium">Voting Status</th>
                     <th className="px-6 py-3 font-medium">Voted Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border print:divide-black/20">
-                  {filteredParticipation.map((student: any) => (
+                  {sortedParticipation.map((student: any) => (
                     <tr key={student.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-6 py-4 font-mono font-medium">{student.student_id}</td>
                       <td className="px-6 py-4 font-medium">{student.full_name}</td>
                       <td className="px-6 py-4 text-muted-foreground print:text-black">
-                        {student.course} {student.year_level ? `- Year ${student.year_level}` : ""}
+                        {student.course} {student.year_level ? `- Year ${student.year_level}` : ""} {student.section ? `- Sec ${student.section}` : ""}
                       </td>
                       <td className="px-6 py-4">
                         {student.voted ? (
@@ -622,7 +684,7 @@ function FinalResults() {
                       </td>
                     </tr>
                   ))}
-                  {filteredParticipation.length === 0 && (
+                  {sortedParticipation.length === 0 && (
                     <tr>
                       <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                         No voter records match the filters.

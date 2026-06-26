@@ -210,6 +210,7 @@ export const updateMyProfile = createServerFn({ method: 'POST' })
         course: z.string().max(80).optional().nullable(),
         year_level: z.coerce.number().min(1).max(6).optional().nullable(),
         photo_url: z.string().optional().nullable(),
+        section: z.string().max(40).optional().nullable(),
       })
       .parse(d),
   )
@@ -223,6 +224,7 @@ export const updateMyProfile = createServerFn({ method: 'POST' })
     if (data.course !== undefined) { fields.push(`course=$${idx++}`); values.push(data.course); }
     if (data.year_level !== undefined) { fields.push(`year_level=$${idx++}`); values.push(data.year_level); }
     if (data.photo_url !== undefined) { fields.push(`photo_url=$${idx++}`); values.push(data.photo_url); }
+    if (data.section !== undefined) { fields.push(`section=$${idx++}`); values.push(data.section); }
     if (fields.length === 0) return { ok: true };
     values.push(context.userId);
     await context.db.query(
@@ -239,7 +241,7 @@ export const getStudents = createServerFn({ method: 'GET' })
     const context = ctx.context as any;
     await ensureAdminOrOfficer(context);
     const { rows } = await context.db.query(
-      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level, p.is_registered, p.created_at,
+      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level, p.section, p.is_registered, p.created_at,
               ARRAY(SELECT role::text FROM public.user_roles WHERE user_id = p.id) as roles
        FROM public.profiles p
        JOIN public.user_roles ur ON p.id = ur.user_id
@@ -365,7 +367,7 @@ export const getVoterParticipationReport = createServerFn({ method: 'POST' })
 
     // 1. Get all registered students
     const { rows: students } = await context.db.query(
-      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level
+      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level, p.section
        FROM public.profiles p
        JOIN public.user_roles ur ON p.id = ur.user_id
        WHERE ur.role = 'student' AND p.is_registered = true
@@ -395,6 +397,7 @@ export const getVoterParticipationReport = createServerFn({ method: 'POST' })
         email: student.email,
         course: student.course,
         year_level: student.year_level,
+        section: student.section,
         voted: !!votedAt,
         voted_at: votedAt ?? null,
       };

@@ -38,7 +38,8 @@ function AuthPage() {
         const student_id = String(fd.get('student_id') || '').trim();
         const course = String(fd.get('course') || '').trim();
         const year_level = String(fd.get('year_level') || '1');
-        await signUpFn({ data: { email, password, full_name, student_id, course, year_level } });
+        const section = String(fd.get('section') || '').trim();
+        await signUpFn({ data: { email, password, full_name, student_id, course, year_level, section } });
         toast.success('Account created — you can sign in now.');
         setMode('signin');
         setShowPassword(false);
@@ -100,7 +101,7 @@ function AuthPage() {
                     <Input id="student_id" name="student_id" required maxLength={40} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <Label htmlFor="course">Course</Label>
                     <Select name="course" required>
@@ -117,6 +118,10 @@ function AuthPage() {
                   <div>
                     <Label htmlFor="year_level">Year</Label>
                     <Input id="year_level" name="year_level" type="number" min={1} max={6} defaultValue={1} />
+                  </div>
+                  <div>
+                    <Label htmlFor="section">Section</Label>
+                    <Input id="section" name="section" placeholder="e.g. A" required maxLength={10} />
                   </div>
                 </div>
               </>

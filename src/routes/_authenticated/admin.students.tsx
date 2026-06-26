@@ -4,10 +4,13 @@ import { getStudents, updateStudentRegistration, deleteStudent, toggleOfficerRol
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, X, UserCheck, UserX, Trash2, ShieldCheck, ShieldOff } from "lucide-react";
+import { Check, X, UserCheck, UserX, Trash2, ShieldCheck, ShieldOff, Search } from "lucide-react";
 import { getMyRoles } from "@/lib/queries.server";
+import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/students")({
   head: () => ({ meta: [{ title: "Students — Admin" }] }),
@@ -20,6 +23,13 @@ function AdminStudents() {
   const deleteStudentFn = useServerFn(deleteStudent);
   const toggleOfficerFn = useServerFn(toggleOfficerRole);
   const getRolesFn = useServerFn(getMyRoles);
+
+  // Filter States
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "registered" | "pending">("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [yearFilter, setYearFilter] = useState("all");
+  const [sectionFilter, setSectionFilter] = useState("all");
 
   const { data: myRoles } = useQuery({
     queryKey: ["my-roles-students-page"],
@@ -67,6 +77,43 @@ function AdminStudents() {
     }
   }
 
+  // Dynamic filter lists from loaded students
+  const courses = useMemo(() => {
+    if (!students) return [];
+    const set = new Set(students.map((s: any) => s.course).filter(Boolean));
+    return Array.from(set).sort() as string[];
+  }, [students]);
+
+  const yearLevels = useMemo(() => {
+    if (!students) return [];
+    const set = new Set(students.map((s: any) => s.year_level).filter(Boolean));
+    return Array.from(set).sort((a: any, b: any) => Number(a) - Number(b)) as number[];
+  }, [students]);
+
+  const sections = useMemo(() => {
+    if (!students) return [];
+    const set = new Set(students.map((s: any) => s.section).filter(Boolean));
+    return Array.from(set).sort() as string[];
+  }, [students]);
+
+  // Client-side filtering logic
+  const filteredStudents = useMemo(() => {
+    if (!students) return [];
+    return students.filter((student: any) => {
+      const matchesSearch =
+        student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.student_id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "registered" && student.is_registered) ||
+        (statusFilter === "pending" && !student.is_registered);
+      const matchesCourse = courseFilter === "all" || student.course === courseFilter;
+      const matchesYear = yearFilter === "all" || String(student.year_level) === yearFilter;
+      const matchesSection = sectionFilter === "all" || student.section === sectionFilter;
+      return matchesSearch && matchesStatus && matchesCourse && matchesYear && matchesSection;
+    });
+  }, [students, searchTerm, statusFilter, courseFilter, yearFilter, sectionFilter]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -76,6 +123,74 @@ function AdminStudents() {
         </div>
       </div>
 
+      {/* Filters bar - matches the requested mockup */}
+      <Card className="p-4 flex flex-wrap gap-4 items-center justify-between shadow-sm">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search student name or ID..."
+            className="pl-9"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Status:</span>
+            <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
+              <SelectTrigger className="w-[130px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="registered">Registered</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Course:</span>
+            <Select value={courseFilter} onValueChange={setCourseFilter}>
+              <SelectTrigger className="w-[130px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {courses.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Year:</span>
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Years</SelectItem>
+                {yearLevels.map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Section:</span>
+            <Select value={sectionFilter} onValueChange={sectionFilter => setSectionFilter(sectionFilter)}>
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sections</SelectItem>
+                {sections.map((s) => <SelectItem key={s} value={s}>Section {s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
+
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -83,7 +198,7 @@ function AdminStudents() {
               <tr>
                 <th className="px-4 py-3 font-medium">Student ID</th>
                 <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Course/Year</th>
+                <th className="px-4 py-3 font-medium">Course/Year/Section</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium text-right">Actions</th>
               </tr>
@@ -93,12 +208,12 @@ function AdminStudents() {
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">Loading students...</td>
                 </tr>
-              ) : students?.length === 0 ? (
+              ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No students found.</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No students match the selected criteria.</td>
                 </tr>
               ) : (
-                students?.map((student: any) => {
+                filteredStudents.map((student: any) => {
                   const roles: string[] = Array.isArray(student.roles) ? student.roles : [];
                   const isOfficer = roles.includes("officer");
                   return (
@@ -115,7 +230,7 @@ function AdminStudents() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {student.course} {student.year_level ? `- Year ${student.year_level}` : ""}
+                        {student.course} {student.year_level ? `- Year ${student.year_level}` : ""} {student.section ? `- Sec ${student.section}` : ""}
                       </td>
                       <td className="px-4 py-3">
                         {student.is_registered ? (

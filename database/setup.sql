@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   photo_url TEXT,
   course TEXT,
   year_level INT,
+  section TEXT,
   is_registered BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -185,8 +186,8 @@ BEGIN
     INSERT INTO public.users (id, email, password_hash)
     VALUES (_admin_id, 'admin@school.edu', '$2a$10$3Ya31TutZjPUxrHAeOUGDOiVkHAWrkuYNCCCG1tzQqBIVY7fUYiFC');
 
-    INSERT INTO public.profiles (id, student_id, full_name, email, course, year_level, is_registered)
-    VALUES (_admin_id, 'ADMIN-001', 'Administrator', 'admin@school.edu', 'BSIS', 4, true);
+    INSERT INTO public.profiles (id, student_id, full_name, email, course, year_level, section, is_registered)
+    VALUES (_admin_id, 'ADMIN-001', 'Administrator', 'admin@school.edu', 'BSIS', 4, 'A', true);
 
     INSERT INTO public.user_roles (user_id, role)
     VALUES (_admin_id, 'admin'), (_admin_id, 'student');
