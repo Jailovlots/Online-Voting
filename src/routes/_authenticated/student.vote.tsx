@@ -128,8 +128,7 @@ function VotePage() {
     );
   }
 
-  const allSelected = data.positions.every((p) => {
-    const sel = selections[p.id];
+  const hasAtLeastOneSelection = Object.values(selections).some((sel) => {
     return sel && (Array.isArray(sel) ? sel.length > 0 : true);
   });
 
@@ -240,7 +239,7 @@ function VotePage() {
           <div className="text-sm">
             <span className="font-medium">{Object.keys(selections).length}</span> of {data.positions.length} positions selected
           </div>
-          <Button disabled={!allSelected} onClick={() => setConfirmOpen(true)} className="bg-gold text-gold-foreground hover:bg-gold/90">
+          <Button disabled={!hasAtLeastOneSelection} onClick={() => setConfirmOpen(true)} className="bg-gold text-gold-foreground hover:bg-gold/90">
             <Vote className="size-4 mr-2" /> Review &amp; submit
           </Button>
         </Card>
