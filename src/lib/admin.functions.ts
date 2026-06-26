@@ -11,6 +11,14 @@ async function ensureAdmin(context: { db: any; userId: string }) {
   if (rows.length === 0) throw new Error('Forbidden: admin only');
 }
 
+async function ensureAdminOrOfficer(context: { db: any; userId: string }) {
+  const { rows } = await context.db.query(
+    "SELECT 1 FROM public.user_roles WHERE user_id = $1 AND role IN ('admin', 'officer') LIMIT 1",
+    [context.userId],
+  );
+  if (rows.length === 0) throw new Error('Forbidden: admin or officer only');
+}
+
 async function log(
   context: { db: any; userId: string },
   action: string,
@@ -98,7 +106,7 @@ export const upsertCandidate = createServerFn({ method: 'POST' })
   .handler(async (ctx) => {
     const context = ctx.context as any;
     const data = ctx.data as any;
-    await ensureAdmin(context);
+    await ensureAdminOrOfficer(context);
     if (data.id) {
       await context.db.query(
         `UPDATE public.candidates SET position_id=$1, full_name=$2, party=$3, bio=$4,
@@ -125,7 +133,7 @@ export const deleteCandidate = createServerFn({ method: 'POST' })
   .handler(async (ctx) => {
     const context = ctx.context as any;
     const data = ctx.data as { id: string };
-    await ensureAdmin(context);
+    await ensureAdminOrOfficer(context);
     await context.db.query('DELETE FROM public.candidates WHERE id = $1', [data.id]);
     await log(context, 'candidate_delete', data.id);
     return { ok: true };
@@ -229,9 +237,10 @@ export const getStudents = createServerFn({ method: 'GET' })
   .middleware([requireAuth])
   .handler(async (ctx) => {
     const context = ctx.context as any;
-    await ensureAdmin(context);
+    await ensureAdminOrOfficer(context);
     const { rows } = await context.db.query(
-      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level, p.is_registered, p.created_at
+      `SELECT p.id, p.student_id, p.full_name, p.email, p.course, p.year_level, p.is_registered, p.created_at,
+              ARRAY(SELECT role::text FROM public.user_roles WHERE user_id = p.id) as roles
        FROM public.profiles p
        JOIN public.user_roles ur ON p.id = ur.user_id
        WHERE ur.role = 'student'
@@ -248,7 +257,7 @@ export const updateStudentRegistration = createServerFn({ method: 'POST' })
   .handler(async (ctx) => {
     const context = ctx.context as any;
     const data = ctx.data as { id: string; is_registered: boolean };
-    await ensureAdmin(context);
+    await ensureAdminOrOfficer(context);
     await context.db.query(
       'UPDATE public.profiles SET is_registered = $1 WHERE id = $2',
       [data.is_registered, data.id]
@@ -352,7 +361,7 @@ export const getVoterParticipationReport = createServerFn({ method: 'POST' })
   .handler(async (ctx) => {
     const context = ctx.context as any;
     const data = ctx.data as { electionId: string };
-    await ensureAdmin(context);
+    await ensureAdminOrOfficer(context);
 
     // 1. Get all registered students
     const { rows: students } = await context.db.query(
@@ -392,6 +401,32 @@ export const getVoterParticipationReport = createServerFn({ method: 'POST' })
     });
 
     return report;
+  });
+
+// ── Toggle Officer Role ────────────────────────────────────────────────────────
+export const toggleOfficerRole = createServerFn({ method: 'POST' })
+  .middleware([requireAuth])
+  .inputValidator((d: { user_id: string; grant: boolean }) =>
+    z.object({ user_id: z.string().uuid(), grant: z.boolean() }).parse(d),
+  )
+  .handler(async (ctx) => {
+    const context = ctx.context as any;
+    const data = ctx.data as { user_id: string; grant: boolean };
+    await ensureAdmin(context);
+    if (data.grant) {
+      await context.db.query(
+        "INSERT INTO public.user_roles (user_id, role) VALUES ($1, 'officer') ON CONFLICT DO NOTHING",
+        [data.user_id],
+      );
+      await log(context, 'grant_officer', data.user_id);
+    } else {
+      await context.db.query(
+        "DELETE FROM public.user_roles WHERE user_id = $1 AND role = 'officer'",
+        [data.user_id],
+      );
+      await log(context, 'revoke_officer', data.user_id);
+    }
+    return { ok: true };
   });
 
 export const uploadImage = createServerFn({ method: 'POST' })

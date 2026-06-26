@@ -85,28 +85,32 @@ function AdminCandidates() {
               const pos = data.positions.find((p) => p.id === c.position_id);
               return (
                 <tr key={c.id} className="border-t">
-                   <td className="p-3 font-medium flex items-center gap-3">
-                     {c.photo_url ? (
-                       <img src={c.photo_url} alt="" className="size-8 rounded-full object-cover border" />
-                     ) : (
-                       <div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
-                         {c.full_name?.charAt(0).toUpperCase()}
-                       </div>
-                     )}
-                     <span>{c.full_name}</span>
+                   <td className="p-3 font-medium">
+                     <div className="flex items-center gap-3">
+                      {c.photo_url ? (
+                        <img src={c.photo_url} alt="" className="size-8 rounded-full object-cover border" />
+                      ) : (
+                        <div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+                          {c.full_name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span>{c.full_name}</span>
+                     </div>
                    </td>
                   <td className="p-3">{pos?.title}</td>
                   <td className="p-3 text-muted-foreground">{c.party}</td>
                   <td className="p-3">
                     <Badge className={c.approved ? "bg-success" : "bg-warning"}>{c.approved ? "Approved" : "Pending"}</Badge>
                   </td>
-                  <td className="p-3 flex gap-1 justify-end">
-                    {!c.approved && (
-                      <Button size="sm" onClick={() => upsert.mutate({ data: { ...c, approved: true } })}>Approve</Button>
-                    )}
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
-                    <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate({ data: { id: c.id } })}><Trash2 className="size-4 text-destructive" /></Button>
-                  </td>
+                   <td className="p-3">
+                     <div className="flex gap-1 justify-end">
+                     {!c.approved && (
+                       <Button size="sm" onClick={() => upsert.mutate({ data: { ...c, approved: true } })}>Approve</Button>
+                     )}
+                     <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
+                     <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate({ data: { id: c.id } })}><Trash2 className="size-4 text-destructive" /></Button>
+                     </div>
+                   </td>
                 </tr>
               );
             })}

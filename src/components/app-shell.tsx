@@ -25,16 +25,30 @@ const adminNav: Item[] = [
   { to: "/admin/audit", label: "Audit Logs", icon: ScrollText },
 ];
 
+// Routes accessible to officers only
+const officerNav: Item[] = [
+  { to: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
+  { to: "/admin/students", label: "Students", icon: Users },
+  { to: "/admin/candidates", label: "Candidates", icon: Users },
+];
+
 export function AppShell({
   variant,
   user,
   children,
 }: {
   variant: "student" | "admin";
-  user: { name: string; email: string; isAdmin: boolean };
+  user: { name: string; email: string; isAdmin: boolean; isOfficer?: boolean };
   children: ReactNode;
 }) {
-  const nav = variant === "admin" ? adminNav : studentNav;
+  // Officers see a filtered nav; full admins see everything
+  const nav =
+    variant === "admin"
+      ? user.isAdmin
+        ? adminNav
+        : officerNav
+      : studentNav;
+
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -47,6 +61,8 @@ export function AppShell({
     navigate({ to: "/auth", replace: true });
   }
 
+  const canSwitchToAdmin = user.isAdmin || user.isOfficer;
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop Sidebar */}
@@ -58,7 +74,9 @@ export function AppShell({
             </div>
             <div>
               <div className="font-display text-lg leading-tight">StudentGov</div>
-              <div className="text-xs text-sidebar-foreground/60 capitalize">{variant} portal</div>
+              <div className="text-xs text-sidebar-foreground/60 capitalize">
+                {variant === "admin" && user.isOfficer && !user.isAdmin ? "officer portal" : `${variant} portal`}
+              </div>
             </div>
           </Link>
         </div>
@@ -81,7 +99,7 @@ export function AppShell({
               </Link>
             );
           })}
-          {variant === "student" && user.isAdmin && (
+          {variant === "student" && canSwitchToAdmin && (
             <Link
               to="/admin/dashboard"
               className="mt-4 flex items-center gap-3 rounded-md px-3 py-2 text-sm bg-gold text-gold-foreground font-medium"
@@ -135,7 +153,9 @@ export function AppShell({
             </div>
             <div>
               <div className="font-display text-lg leading-tight">StudentGov</div>
-              <div className="text-xs text-sidebar-foreground/60 capitalize">{variant} portal</div>
+              <div className="text-xs text-sidebar-foreground/60 capitalize">
+                {variant === "admin" && user.isOfficer && !user.isAdmin ? "officer portal" : `${variant} portal`}
+              </div>
             </div>
           </Link>
           <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground" title="Close menu">
@@ -162,7 +182,7 @@ export function AppShell({
               </Link>
             );
           })}
-          {variant === "student" && user.isAdmin && (
+          {variant === "student" && canSwitchToAdmin && (
             <Link
               to="/admin/dashboard"
               onClick={() => setMobileMenuOpen(false)}

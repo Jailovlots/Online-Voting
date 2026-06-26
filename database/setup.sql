@@ -6,7 +6,7 @@
 
 -- ============ ENUMS ============
 DO $$ BEGIN
-  CREATE TYPE public.app_role AS ENUM ('admin', 'student');
+  CREATE TYPE public.app_role AS ENUM ('admin', 'student', 'officer');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN

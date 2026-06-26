@@ -16,7 +16,7 @@ function StudentLayout() {
     queryKey: ['me'],
     queryFn: async () => {
       const [profile, roles] = await Promise.all([profileFn(), rolesFn()]);
-      return { profile, isAdmin: roles.includes('admin') };
+      return { profile, isAdmin: roles.includes('admin'), isOfficer: roles.includes('officer') };
     },
   });
 
@@ -29,6 +29,7 @@ function StudentLayout() {
         name: data.profile?.full_name ?? 'Student',
         email: data.profile?.email ?? '',
         isAdmin: data.isAdmin,
+        isOfficer: data.isOfficer,
       }}
     >
       <Outlet />

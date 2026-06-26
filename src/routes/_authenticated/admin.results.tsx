@@ -448,9 +448,11 @@ function FinalResults() {
                             <td className="px-6 py-4 text-center font-mono text-muted-foreground print:text-black">
                               {index + 1}
                             </td>
-                            <td className="px-6 py-4 font-medium flex items-center gap-2">
-                              {won && <Trophy className="size-4 text-success print:text-black" />}
-                              {c.full_name}
+                            <td className="px-6 py-4 font-medium">
+                              <div className="flex items-center gap-2">
+                                {won && <Trophy className="size-4 text-success print:text-black" />}
+                                {c.full_name}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-muted-foreground print:text-black">{c.party || "Independent"}</td>
                             <td className="px-6 py-4 text-right font-mono font-bold">{c.votes}</td>
