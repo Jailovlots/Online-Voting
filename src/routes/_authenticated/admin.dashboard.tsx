@@ -36,7 +36,7 @@ function AdminDashboard() {
       return (await getParticipationFn({ data: { electionId: activeElection.id } })) ?? [];
     },
     enabled: !!activeElection?.id,
-    refetchInterval: 30000, // Every 30s — participation doesn't change rapidly
+    refetchInterval: 10000, // Every 10s — more responsive for live events
   });
 
   // Fetch live voting standings
@@ -50,7 +50,7 @@ function AdminDashboard() {
       ]);
       return { positions: positions ?? [], candidates: candidates ?? [], votes: votes ?? [] };
     },
-    refetchInterval: 15000, // Refresh every 15s — reduces DB load ~5x vs 3s polling
+    refetchInterval: 8000, // Refresh every 8s for responsive live updates
   });
 
   if (isLoading) return <div className="text-muted-foreground p-8">Loading live voting status...</div>;
@@ -66,8 +66,14 @@ function AdminDashboard() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="font-display text-3xl">Live Voting Status</h1>
-          <p className="text-muted-foreground">Real-time election progress and current leaders.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="font-display text-3xl">Live Voting Status</h1>
+            <span className="flex items-center gap-1.5 text-xs font-bold text-success bg-success/10 border border-success/20 rounded-full px-2.5 py-1">
+              <span className="size-2 rounded-full bg-success animate-pulse inline-block" />
+              LIVE
+            </span>
+          </div>
+          <p className="text-muted-foreground">Real-time election progress and current leaders. Updates every 8 seconds.</p>
         </div>
       </div>
 

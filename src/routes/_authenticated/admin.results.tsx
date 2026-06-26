@@ -1,16 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPositions, getCandidates, getVotes, getElections } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, Trophy, Printer, Search, Users, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+import { Download, Trophy, Printer, Search, Users, CheckCircle2, AlertCircle, Calendar, RefreshCw } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { getVoterParticipationReport } from "@/lib/admin.functions";
 import { useState, useMemo, useEffect } from "react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/admin/results")({
   head: () => ({ meta: [{ title: "Reports & Results — Admin" }] }),
@@ -24,9 +24,12 @@ function FinalResults() {
   const getElectionsFn = useServerFn(getElections);
   const getParticipationFn = useServerFn(getVoterParticipationReport);
 
+  const qc = useQueryClient();
   const [selectedElectionId, setSelectedElectionId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"results" | "participation">("results");
   const [isPrintingWinnersOnly, setIsPrintingWinnersOnly] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Search & Filter States for Participation
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,18 +51,21 @@ function FinalResults() {
     }
   }, [elections, selectedElectionId]);
 
-  // Fetch positions, candidates, and votes
+  // Fetch positions, candidates, and votes — include selectedElectionId in key so
+  // switching elections immediately invalidates the cache and triggers a fresh fetch.
   const { data, isLoading: isDataLoading } = useQuery({
-    queryKey: ["final-results"],
+    queryKey: ["final-results", selectedElectionId],
     queryFn: async () => {
       const [positions, candidates, votes] = await Promise.all([
         getPositionsFn(),
         getCandidatesFn(),
         getVotesFn(),
       ]);
+      setLastUpdated(new Date());
       return { positions: positions ?? [], candidates: candidates ?? [], votes: votes ?? [] };
     },
-    refetchInterval: 10000,
+    enabled: !!selectedElectionId,
+    refetchInterval: 5000, // Poll every 5s for live results
   });
 
   // Fetch participation report
@@ -67,11 +73,21 @@ function FinalResults() {
     queryKey: ["participation-report", selectedElectionId],
     queryFn: async () => {
       if (!selectedElectionId) return [];
-      return (await getParticipationFn({ data: { electionId: selectedElectionId } })) ?? [];
+      const result = (await getParticipationFn({ data: { electionId: selectedElectionId } })) ?? [];
+      setLastUpdated(new Date());
+      return result;
     },
     enabled: !!selectedElectionId,
-    refetchInterval: 10000,
+    refetchInterval: 5000, // Poll every 5s for live participation
   });
+
+  async function handleManualRefresh() {
+    setIsRefreshing(true);
+    await qc.invalidateQueries({ queryKey: ["final-results", selectedElectionId] });
+    await qc.invalidateQueries({ queryKey: ["participation-report", selectedElectionId] });
+    setIsRefreshing(false);
+    setLastUpdated(new Date());
+  }
 
   const selectedElection = elections?.find((e: any) => e.id === selectedElectionId);
 
@@ -182,7 +198,7 @@ function FinalResults() {
     }, 150);
   }
 
-  const isLoading = isElectionsLoading || isDataLoading || (isPartLoading && !participation);
+  const isLoading = isElectionsLoading || (isDataLoading && !data) || (isPartLoading && !participation);
 
   if (isLoading) return <div className="p-8 text-muted-foreground">Loading reports...</div>;
   if (!elections || elections.length === 0) {
@@ -291,12 +307,24 @@ function FinalResults() {
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b pb-6 print:border-black print:pb-4">
         <div>
-          <h1 className="font-display text-4xl print:text-3xl">
-            {activeTab === "results" ? "Election Results" : "Voter Turnout & Participation"}
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="font-display text-4xl print:text-3xl">
+              {activeTab === "results" ? "Election Results" : "Voter Turnout & Participation"}
+            </h1>
+            {/* LIVE indicator */}
+            <span className="print:hidden flex items-center gap-1.5 text-xs font-bold text-success bg-success/10 border border-success/20 rounded-full px-2.5 py-1">
+              <span className="size-2 rounded-full bg-success animate-pulse inline-block" />
+              LIVE
+            </span>
+          </div>
           <p className="text-muted-foreground print:text-sm">
             {selectedElection?.title} — {selectedElection?.status.toUpperCase()}
           </p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground/60 mt-0.5 print:hidden">
+              Last updated {formatDistanceToNow(lastUpdated, { addSuffix: true })}
+            </p>
+          )}
         </div>
         
         <div className="flex flex-wrap items-center gap-3 print:hidden">
@@ -315,6 +343,18 @@ function FinalResults() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Manual refresh button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`size-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
 
           {activeTab === "results" ? (
             <>
