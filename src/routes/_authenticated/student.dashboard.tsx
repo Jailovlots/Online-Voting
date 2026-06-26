@@ -49,6 +49,9 @@ function Dashboard() {
       }
       return { active, announcements: stats.announcements, positionCount: stats.positionsCount, candidateCount: stats.candidatesCount, voteCount: stats.votesCount, voted, isApproved: registration?.isApproved ?? false };
     },
+    staleTime: 0,          // Always consider data stale so re-mount forces a fresh fetch
+    refetchInterval: 10000, // Poll every 10 s so admin approval reflects within ~10 seconds
+    refetchOnWindowFocus: true, // Re-fetch when student returns to the tab
   });
 
   const end = data?.active ? new Date(data.active.ends_at) : null;
@@ -114,7 +117,7 @@ function Dashboard() {
           { label: "Positions", value: data?.positionCount ?? 0, icon: Calendar, color: "text-primary" },
           { label: "Candidates", value: data?.candidateCount ?? 0, icon: Users, color: "text-gold" },
           { label: "Total votes cast", value: data?.voteCount ?? 0, icon: Vote, color: "text-success" },
-          { label: "Status", value: data?.voted ? "Voted" : "Pending", icon: Clock, color: data?.voted ? "text-success" : "text-warning" },
+          { label: "Status", value: data?.voted ? "Voted ✓" : data?.isApproved ? "Registered" : "Pending", icon: Clock, color: data?.voted ? "text-success" : data?.isApproved ? "text-primary" : "text-warning" },
         ].map((s) => (
           <Card key={s.label} className="p-5">
             <div className="flex items-center justify-between">

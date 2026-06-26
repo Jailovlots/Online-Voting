@@ -49,6 +49,8 @@ function VotePage() {
         isApproved: registration?.isApproved ?? false,
       };
     },
+    staleTime: 0,           // Never serve stale registration data
+    refetchOnWindowFocus: true, // Re-fetch when student switches back to this tab
   });
 
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
