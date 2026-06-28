@@ -49,7 +49,7 @@ function Index() {
             <span className="text-gold drop-shadow-lg">Dimataling Campus</span>
           </h1>
           <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto drop-shadow">
-            Student Government   Leading with Purpose, Serving with Heart   One Vision, One Voice, One Community.
+            Student Government. Leading with Purpose, Serving with Heart. One Vision, One Voice, One Community.
           </p>
           <div className="mt-10 flex flex-wrap gap-3 justify-center">
             <Link to="/auth" className="rounded-md bg-gold text-gold-foreground px-6 py-3 font-medium hover:opacity-90 shadow-lg">
