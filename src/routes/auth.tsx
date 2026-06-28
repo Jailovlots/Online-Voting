@@ -37,10 +37,10 @@ function AuthPage() {
         const last_name = String(fd.get('last_name') || '').trim();
         const first_name = String(fd.get('first_name') || '').trim();
         const middle_initial = String(fd.get('middle_initial') || '').trim();
-        
+
         const miSuffix = middle_initial ? ` ${middle_initial}` : '';
         const full_name = `${last_name}, ${first_name}${miSuffix}`;
-        
+
         const student_id = String(fd.get('student_id') || '').trim();
         const course = String(fd.get('course') || '').trim();
         const year_level = String(fd.get('year_level') || '1');
@@ -74,8 +74,7 @@ function AuthPage() {
             Every voice counts. <span className="text-gold">Make yours heard.</span>
           </h2>
           <p className="mt-4 text-primary-foreground/80 max-w-md">
-            Sign in with your student credentials to access the official ballot for the 2026 Student Government elections.
-          </p>
+            Mission: To bridge the gap between students and administration through transparent communication, inclusive events, and active advocacy for student wellness.
         </div>
         <p className="text-xs text-primary-foreground/60">© 2026 Student Government</p>
         <div className="absolute -bottom-40 -right-20 size-[400px] rounded-full bg-gold/20 blur-3xl" />
