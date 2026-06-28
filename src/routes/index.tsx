@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { Vote, ShieldCheck, BarChart3, Users, Sparkles } from "lucide-react";
+import { ShieldCheck, BarChart3, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,9 +20,7 @@ function Index() {
       <header className="absolute top-0 inset-x-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-primary-foreground">
-            <div className="size-9 rounded-lg grid place-items-center" style={{ background: "var(--gradient-gold)" }}>
-              <Vote className="size-5 text-primary" />
-            </div>
+            <img src="/school-logo.png" alt="School Logo" className="size-10 object-contain" />
             <span className="font-display text-xl">StudentGov</span>
           </Link>
           <Link to="/auth" className="rounded-md bg-gold text-gold-foreground px-4 py-2 text-sm font-medium hover:opacity-90">
@@ -37,8 +35,8 @@ function Index() {
             <Sparkles className="size-3.5 text-gold" /> Elections 2026 are live
           </div>
           <h1 className="mt-6 font-display text-5xl md:text-7xl leading-[1.05]">
-            Your vote.<br />
-            <span className="text-gold">Your government.</span>
+            ZDSPGC<br />
+            <span className="text-gold">Dimataling Campus</span>
           </h1>
           <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
             A secure, anonymous, end-to-end online ballot for every registered student. Cast your vote in minutes — results are tallied in real time.

@@ -111,7 +111,7 @@ function AdminStudents() {
       const matchesYear = yearFilter === "all" || String(student.year_level) === yearFilter;
       const matchesSection = sectionFilter === "all" || student.section === sectionFilter;
       return matchesSearch && matchesStatus && matchesCourse && matchesYear && matchesSection;
-    });
+    }).sort((a: any, b: any) => a.full_name.localeCompare(b.full_name));
   }, [students, searchTerm, statusFilter, courseFilter, yearFilter, sectionFilter]);
 
   return (

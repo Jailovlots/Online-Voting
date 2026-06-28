@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Vote, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const COURSES = ['BPED', 'BSIS', 'ACT'] as const;
@@ -60,9 +60,7 @@ function AuthPage() {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-12 text-primary-foreground relative overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
         <Link to="/" className="flex items-center gap-2">
-          <div className="size-9 rounded-lg grid place-items-center" style={{ background: 'var(--gradient-gold)' }}>
-            <Vote className="size-5 text-primary" />
-          </div>
+          <img src="/school-logo.png" alt="School Logo" className="size-10 object-contain" />
           <span className="font-display text-xl">StudentGov</span>
         </Link>
         <div>

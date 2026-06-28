@@ -69,9 +69,7 @@ export function AppShell({
       <aside className="hidden md:flex w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
         <div className="px-6 py-5 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-2">
-            <div className="size-9 rounded-lg grid place-items-center" style={{ background: "var(--gradient-gold)" }}>
-              <Vote className="size-5 text-sidebar-primary-foreground" />
-            </div>
+            <img src="/school-logo.png" alt="School Logo" className="size-10 object-contain" />
             <div>
               <div className="font-display text-lg leading-tight">StudentGov</div>
               <div className="text-xs text-sidebar-foreground/60 capitalize">
@@ -148,9 +146,7 @@ export function AppShell({
       >
         <div className="px-6 py-5 border-b border-sidebar-border flex items-center justify-between">
           <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
-            <div className="size-9 rounded-lg grid place-items-center" style={{ background: "var(--gradient-gold)" }}>
-              <Vote className="size-5 text-sidebar-primary-foreground" />
-            </div>
+            <img src="/school-logo.png" alt="School Logo" className="size-10 object-contain" />
             <div>
               <div className="font-display text-lg leading-tight">StudentGov</div>
               <div className="text-xs text-sidebar-foreground/60 capitalize">
@@ -227,6 +223,7 @@ export function AppShell({
             >
               <Menu className="size-6" />
             </button>
+            <img src="/school-logo.png" alt="School Logo" className="size-8 object-contain" />
             <Link to="/" className="font-display text-lg font-semibold">StudentGov</Link>
           </div>
           <button onClick={signOut} className="p-2 rounded hover:bg-muted" title="Sign out">
