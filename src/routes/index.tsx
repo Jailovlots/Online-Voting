@@ -29,28 +29,38 @@ function Index() {
         </div>
       </header>
 
-      <section className="relative pt-32 pb-24 px-6 text-primary-foreground overflow-hidden" style={{ background: "var(--gradient-hero)" }}>
+      <section
+        className="relative pt-32 pb-24 px-6 text-white overflow-hidden"
+        style={{
+          backgroundImage: "url('/campus-bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Dark red overlay for readability */}
+        <div className="absolute inset-0 z-0" style={{ background: "linear-gradient(135deg, oklch(0.15 0.1 25 / 0.88), oklch(0.25 0.12 25 / 0.75) 60%, oklch(0.1 0.06 25 / 0.82))" }} />
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-medium backdrop-blur border border-white/20">
             <Sparkles className="size-3.5 text-gold" /> Elections 2026 are live
           </div>
-          <h1 className="mt-6 font-display text-5xl md:text-7xl leading-[1.05]">
+          <h1 className="mt-6 font-display text-5xl md:text-7xl leading-[1.05] drop-shadow-lg">
             ZDSPGC<br />
-            <span className="text-gold">Dimataling Campus</span>
+            <span className="text-gold drop-shadow-lg">Dimataling Campus</span>
           </h1>
-          <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl mx-auto">
+          <p className="mt-6 text-lg text-white/80 max-w-2xl mx-auto drop-shadow">
             A secure, anonymous, end-to-end online ballot for every registered student. Cast your vote in minutes — results are tallied in real time.
           </p>
           <div className="mt-10 flex flex-wrap gap-3 justify-center">
             <Link to="/auth" className="rounded-md bg-gold text-gold-foreground px-6 py-3 font-medium hover:opacity-90 shadow-lg">
               Sign in with Student ID
             </Link>
-            <Link to="/auth" className="rounded-md border border-white/30 px-6 py-3 font-medium hover:bg-white/10">
+            <Link to="/auth" className="rounded-md border border-white/30 px-6 py-3 font-medium hover:bg-white/10 backdrop-blur">
               Create account
             </Link>
           </div>
         </div>
-        <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gold/20 blur-3xl" />
+        <div className="absolute -bottom-32 left-1/2 -translate-x-1/2 size-[600px] rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       </section>
 
       <section className="max-w-6xl mx-auto px-6 py-20">
