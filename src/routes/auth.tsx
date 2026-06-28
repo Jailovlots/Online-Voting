@@ -75,6 +75,7 @@ function AuthPage() {
           </h2>
           <p className="mt-4 text-primary-foreground/80 max-w-md">
             Mission: To bridge the gap between students and administration through transparent communication, inclusive events, and active advocacy for student wellness.
+          </p>
         </div>
         <p className="text-xs text-primary-foreground/60">© 2026 Student Government</p>
         <div className="absolute -bottom-40 -right-20 size-[400px] rounded-full bg-gold/20 blur-3xl" />
