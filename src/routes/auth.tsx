@@ -34,7 +34,13 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === 'signup') {
-        const full_name = String(fd.get('full_name') || '').trim();
+        const last_name = String(fd.get('last_name') || '').trim();
+        const first_name = String(fd.get('first_name') || '').trim();
+        const middle_initial = String(fd.get('middle_initial') || '').trim();
+        
+        const miSuffix = middle_initial ? ` ${middle_initial}` : '';
+        const full_name = `${last_name}, ${first_name}${miSuffix}`;
+        
         const student_id = String(fd.get('student_id') || '').trim();
         const course = String(fd.get('course') || '').trim();
         const year_level = String(fd.get('year_level') || '1');
@@ -91,12 +97,22 @@ function AuthPage() {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="full_name">Full name</Label>
-                    <Input id="full_name" name="full_name" required maxLength={120} />
+                    <Label htmlFor="last_name">Surname (Last name)</Label>
+                    <Input id="last_name" name="last_name" placeholder="e.g. Labrador" required maxLength={50} />
                   </div>
                   <div>
                     <Label htmlFor="student_id">Student ID</Label>
-                    <Input id="student_id" name="student_id" required maxLength={40} />
+                    <Input id="student_id" name="student_id" placeholder="e.g. 2026-0001" required maxLength={40} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="first_name">First name</Label>
+                    <Input id="first_name" name="first_name" placeholder="e.g. Miller" required maxLength={50} />
+                  </div>
+                  <div>
+                    <Label htmlFor="middle_initial">Middle Initial</Label>
+                    <Input id="middle_initial" name="middle_initial" placeholder="e.g. L." maxLength={10} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
