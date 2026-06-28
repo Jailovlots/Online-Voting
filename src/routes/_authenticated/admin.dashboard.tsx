@@ -165,15 +165,20 @@ function AdminDashboard() {
                   return (
                     <div key={c.id} className="relative">
                       <div className="flex justify-between text-sm mb-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-2">
                           {isWinning || isTiedWithWinner ? (
-                            <CheckCircle2 className="size-4 text-success" />
+                            <CheckCircle2 className="size-4 text-success mt-0.5" />
                           ) : (
-                            <XCircle className="size-4 text-muted-foreground/50" />
+                            <XCircle className="size-4 text-muted-foreground/50 mt-0.5" />
                           )}
-                          <span className={`font-medium ${isWinning || isTiedWithWinner ? "text-foreground" : "text-muted-foreground"}`}>
-                            {c.full_name}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className={`font-medium leading-none ${isWinning || isTiedWithWinner ? "text-foreground" : "text-muted-foreground"}`}>
+                              {c.full_name}
+                            </span>
+                            <span className="text-[11px] text-muted-foreground mt-1">
+                              {c.party || "Independent"}
+                            </span>
+                          </div>
                         </div>
                         <span className="font-mono text-xs">{c.votes} votes</span>
                       </div>
