@@ -123,6 +123,15 @@ CREATE INDEX IF NOT EXISTS idx_votes_election_voter  ON public.votes(election_id
 CREATE INDEX IF NOT EXISTS idx_user_roles_user_role  ON public.user_roles(user_id, role);
 CREATE INDEX IF NOT EXISTS idx_profiles_registered   ON public.profiles(id) WHERE is_registered = true;
 
+-- ============ ELIGIBLE VOTERS ============
+CREATE TABLE IF NOT EXISTS public.eligible_voters (
+  student_id  TEXT PRIMARY KEY,
+  last_name   TEXT NOT NULL,
+  first_name  TEXT NOT NULL,
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_eligible_voters_student_id ON public.eligible_voters(student_id);
+
 
 INSERT INTO public.positions (title, description, max_winners, order_index)
 SELECT * FROM (VALUES

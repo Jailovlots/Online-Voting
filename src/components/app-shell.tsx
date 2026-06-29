@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
 import { clearToken } from "@/lib/session-store";
-import { Vote, LayoutDashboard, Users, Megaphone, ScrollText, Trophy, Calendar, UserCircle, Settings, LogOut, ShieldCheck, ListChecks, Menu, X } from "lucide-react";
+import { Vote, LayoutDashboard, Users, Megaphone, ScrollText, Trophy, Calendar, UserCircle, Settings, LogOut, ShieldCheck, ListChecks, Menu, X, UserCheck } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 type Item = { to: string; label: string; icon: any };
@@ -21,6 +21,7 @@ const adminNav: Item[] = [
   { to: "/admin/candidates", label: "Candidates", icon: Users },
   { to: "/admin/positions", label: "Positions", icon: ListChecks },
   { to: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { to: "/admin/eligible-voters", label: "Eligible Voters", icon: UserCheck },
   { to: "/admin/results", label: "Results", icon: Trophy },
   { to: "/admin/audit", label: "Audit Logs", icon: ScrollText },
 ];

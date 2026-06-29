@@ -53,12 +53,28 @@ export const signUp = createServerFn({ method: 'POST' })
     const data = ctx.data as any;
     const email = data.email.toLowerCase().trim();
 
-    // Check duplicate
+    // Check duplicate email
     const { rows: existing } = await db.query(
       'SELECT id FROM public.users WHERE email = $1',
       [email],
     );
     if (existing.length > 0) throw new Error('An account with this email already exists');
+
+    // Check if student_id is in the eligible voters list
+    const { rows: eligibleRows } = await db.query(
+      'SELECT 1 FROM public.eligible_voters WHERE student_id = $1 LIMIT 1',
+      [data.student_id],
+    );
+    if (eligibleRows.length === 0)
+      throw new Error('Your Student ID is not included in the list of eligible voters.');
+
+    // Check if student_id already has an account
+    const { rows: existingProfile } = await db.query(
+      'SELECT 1 FROM public.profiles WHERE student_id = $1 LIMIT 1',
+      [data.student_id],
+    );
+    if (existingProfile.length > 0)
+      throw new Error('An account already exists for this Student ID.');
 
     const password_hash = await hashPassword(data.password);
 

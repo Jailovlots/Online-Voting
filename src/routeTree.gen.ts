@@ -24,6 +24,7 @@ import { Route as AuthenticatedStudentAnnouncementsRouteImport } from './routes/
 import { Route as AuthenticatedAdminStudentsRouteImport } from './routes/_authenticated/admin.students'
 import { Route as AuthenticatedAdminResultsRouteImport } from './routes/_authenticated/admin.results'
 import { Route as AuthenticatedAdminPositionsRouteImport } from './routes/_authenticated/admin.positions'
+import { Route as AuthenticatedAdminEligibleVotersRouteImport } from './routes/_authenticated/admin.eligible-voters'
 import { Route as AuthenticatedAdminElectionsRouteImport } from './routes/_authenticated/admin.elections'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin.dashboard'
 import { Route as AuthenticatedAdminCandidatesRouteImport } from './routes/_authenticated/admin.candidates'
@@ -112,6 +113,12 @@ const AuthenticatedAdminPositionsRoute =
     path: '/positions',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEligibleVotersRoute =
+  AuthenticatedAdminEligibleVotersRouteImport.update({
+    id: '/eligible-voters',
+    path: '/eligible-voters',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminElectionsRoute =
   AuthenticatedAdminElectionsRouteImport.update({
     id: '/elections',
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/admin/candidates': typeof AuthenticatedAdminCandidatesRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/elections': typeof AuthenticatedAdminElectionsRoute
+  '/admin/eligible-voters': typeof AuthenticatedAdminEligibleVotersRoute
   '/admin/positions': typeof AuthenticatedAdminPositionsRoute
   '/admin/results': typeof AuthenticatedAdminResultsRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
@@ -174,6 +182,7 @@ export interface FileRoutesByTo {
   '/admin/candidates': typeof AuthenticatedAdminCandidatesRoute
   '/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/admin/elections': typeof AuthenticatedAdminElectionsRoute
+  '/admin/eligible-voters': typeof AuthenticatedAdminEligibleVotersRoute
   '/admin/positions': typeof AuthenticatedAdminPositionsRoute
   '/admin/results': typeof AuthenticatedAdminResultsRoute
   '/admin/students': typeof AuthenticatedAdminStudentsRoute
@@ -197,6 +206,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/candidates': typeof AuthenticatedAdminCandidatesRoute
   '/_authenticated/admin/dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/admin/elections': typeof AuthenticatedAdminElectionsRoute
+  '/_authenticated/admin/eligible-voters': typeof AuthenticatedAdminEligibleVotersRoute
   '/_authenticated/admin/positions': typeof AuthenticatedAdminPositionsRoute
   '/_authenticated/admin/results': typeof AuthenticatedAdminResultsRoute
   '/_authenticated/admin/students': typeof AuthenticatedAdminStudentsRoute
@@ -220,6 +230,7 @@ export interface FileRouteTypes {
     | '/admin/candidates'
     | '/admin/dashboard'
     | '/admin/elections'
+    | '/admin/eligible-voters'
     | '/admin/positions'
     | '/admin/results'
     | '/admin/students'
@@ -241,6 +252,7 @@ export interface FileRouteTypes {
     | '/admin/candidates'
     | '/admin/dashboard'
     | '/admin/elections'
+    | '/admin/eligible-voters'
     | '/admin/positions'
     | '/admin/results'
     | '/admin/students'
@@ -263,6 +275,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/candidates'
     | '/_authenticated/admin/dashboard'
     | '/_authenticated/admin/elections'
+    | '/_authenticated/admin/eligible-voters'
     | '/_authenticated/admin/positions'
     | '/_authenticated/admin/results'
     | '/_authenticated/admin/students'
@@ -389,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPositionsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/eligible-voters': {
+      id: '/_authenticated/admin/eligible-voters'
+      path: '/eligible-voters'
+      fullPath: '/admin/eligible-voters'
+      preLoaderRoute: typeof AuthenticatedAdminEligibleVotersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/elections': {
       id: '/_authenticated/admin/elections'
       path: '/elections'
@@ -433,6 +453,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCandidatesRoute: typeof AuthenticatedAdminCandidatesRoute
   AuthenticatedAdminDashboardRoute: typeof AuthenticatedAdminDashboardRoute
   AuthenticatedAdminElectionsRoute: typeof AuthenticatedAdminElectionsRoute
+  AuthenticatedAdminEligibleVotersRoute: typeof AuthenticatedAdminEligibleVotersRoute
   AuthenticatedAdminPositionsRoute: typeof AuthenticatedAdminPositionsRoute
   AuthenticatedAdminResultsRoute: typeof AuthenticatedAdminResultsRoute
   AuthenticatedAdminStudentsRoute: typeof AuthenticatedAdminStudentsRoute
@@ -444,6 +465,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCandidatesRoute: AuthenticatedAdminCandidatesRoute,
   AuthenticatedAdminDashboardRoute: AuthenticatedAdminDashboardRoute,
   AuthenticatedAdminElectionsRoute: AuthenticatedAdminElectionsRoute,
+  AuthenticatedAdminEligibleVotersRoute: AuthenticatedAdminEligibleVotersRoute,
   AuthenticatedAdminPositionsRoute: AuthenticatedAdminPositionsRoute,
   AuthenticatedAdminResultsRoute: AuthenticatedAdminResultsRoute,
   AuthenticatedAdminStudentsRoute: AuthenticatedAdminStudentsRoute,
