@@ -56,6 +56,11 @@ function findCol(headers: string[], aliases: string[]): string | undefined {
 
 /**
  * Parse an xlsx/csv workbook into rows.
+ *
+ * Handles files that have decorative title rows at the top (e.g. school name,
+ * "Republic of the Philippines", semester info) by scanning every row for one
+ * that contains recognisable column header names.
+ *
  * Supports:
  *  - Separate "Student ID", "Last Name", "First Name" columns
  *  - Combined "Last Name, First Name" style column (comma or space delimiter)
@@ -65,62 +70,104 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
   if (!sheetName) return { ok: false, error: 'The file has no sheets.' };
 
   const ws = wb.Sheets[sheetName];
-  const raw: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-  if (raw.length === 0) return { ok: false, error: 'The sheet is empty or has no data rows.' };
+  // Read as raw 2-D array so we can scan every row regardless of how many
+  // decorative title rows sit above the actual header.
+  const allRows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-  const headers = Object.keys(raw[0]);
+  if (allRows.length === 0) return { ok: false, error: 'The sheet is empty or has no data rows.' };
 
-  // Locate Student ID column
-  const idCol = findCol(headers, STUDENT_ID_ALIASES);
-  if (!idCol) {
+  // ── Scan for the header row ─────────────────────────────────────────────
+  // We look for the first row that contains at least one Student ID alias
+  // AND at least one name-related alias.
+  const ALL_NAME_ALIASES = [
+    ...COMBINED_NAME_ALIASES,
+    ...LAST_NAME_ALIASES,
+    ...FIRST_NAME_ALIASES,
+  ];
+
+  let headerRowIndex = -1;
+  for (let i = 0; i < Math.min(allRows.length, 30); i++) {
+    const rowCells = allRows[i].map((c: any) => normalise(String(c ?? '')));
+    const hasId = rowCells.some((c: string) => STUDENT_ID_ALIASES.includes(c));
+    const hasName = rowCells.some((c: string) => ALL_NAME_ALIASES.includes(c));
+    if (hasId && hasName) {
+      headerRowIndex = i;
+      break;
+    }
+  }
+
+  if (headerRowIndex === -1) {
+    // Build a helpful preview of what was found in the first few rows
+    const preview = allRows
+      .slice(0, 5)
+      .map((r) => r.filter(Boolean).join(', '))
+      .filter(Boolean)
+      .join(' | ');
     return {
       ok: false,
-      error: `Could not find a "Student ID" column. Headers found: ${headers.join(', ')}`,
+      error:
+        `Could not find a header row with "Student ID" and name columns in the first 30 rows. ` +
+        `First rows found: ${preview || '(empty)'}. ` +
+        `Please make sure the file has column headers like "Student ID", "Last Name", "First Name" (or a combined "Last Name, First Name" column).`,
     };
   }
 
-  // Locate name columns — try combined first, then separate
-  const combinedCol = findCol(headers, COMBINED_NAME_ALIASES);
-  const lastCol = findCol(headers, LAST_NAME_ALIASES);
-  const firstCol = findCol(headers, FIRST_NAME_ALIASES);
+  const headers: string[] = allRows[headerRowIndex].map((c: any) => String(c ?? '').trim());
+  const dataRows = allRows.slice(headerRowIndex + 1);
 
-  const hasCombined = !!combinedCol;
-  const hasSeparate = !!lastCol && !!firstCol;
+  // ── Locate columns by alias ─────────────────────────────────────────────
+  const idCol = headers.findIndex((h) => STUDENT_ID_ALIASES.includes(normalise(h)));
+  const combinedColIdx = headers.findIndex((h) => COMBINED_NAME_ALIASES.includes(normalise(h)));
+  const lastColIdx = headers.findIndex((h) => LAST_NAME_ALIASES.includes(normalise(h)));
+  const firstColIdx = headers.findIndex((h) => FIRST_NAME_ALIASES.includes(normalise(h)));
+
+  if (idCol === -1) {
+    return {
+      ok: false,
+      error: `Found a header row at line ${headerRowIndex + 1} but it has no "Student ID" column. Headers: ${headers.join(', ')}`,
+    };
+  }
+
+  const hasCombined = combinedColIdx !== -1;
+  const hasSeparate = lastColIdx !== -1 && firstColIdx !== -1;
 
   if (!hasCombined && !hasSeparate) {
     return {
       ok: false,
-      error: `Could not find name columns. Expected either a combined "Last Name, First Name" column OR separate "Last Name" and "First Name" columns. Headers found: ${headers.join(', ')}`,
+      error:
+        `Found a header row at line ${headerRowIndex + 1} but no name columns. ` +
+        `Expected either a combined "Last Name, First Name" column OR separate "Last Name" and "First Name" columns. ` +
+        `Headers found: ${headers.join(', ')}`,
     };
   }
 
+  // ── Parse data rows ─────────────────────────────────────────────────────
   const rows: ParsedRow[] = [];
   const warnings: string[] = [];
 
-  raw.forEach((r, idx) => {
-    const rowNum = idx + 2; // +2 because row 1 = headers
+  dataRows.forEach((r, idx) => {
+    const rowNum = headerRowIndex + idx + 2; // 1-based sheet row number
     const student_id = String(r[idCol] ?? '').trim();
     if (!student_id) {
-      warnings.push(`Row ${rowNum}: missing Student ID — skipped.`);
+      // silently skip blank rows (common at bottom of enrollment lists)
       return;
     }
 
     let last_name = '';
     let first_name = '';
 
-    if (hasSeparate && (lastCol && firstCol)) {
-      last_name = String(r[lastCol] ?? '').trim();
-      first_name = String(r[firstCol] ?? '').trim();
-    } else if (hasCombined && combinedCol) {
-      const combined = String(r[combinedCol] ?? '').trim();
+    if (hasSeparate) {
+      last_name = String(r[lastColIdx] ?? '').trim();
+      first_name = String(r[firstColIdx] ?? '').trim();
+    } else if (hasCombined) {
+      const combined = String(r[combinedColIdx] ?? '').trim();
       // Split on first comma: "Dela Cruz, Juan"  or first space: "Dela Cruz Juan"
       const commaIdx = combined.indexOf(',');
       if (commaIdx !== -1) {
         last_name = combined.slice(0, commaIdx).trim();
         first_name = combined.slice(commaIdx + 1).trim();
       } else {
-        // Fall back: split at first space
         const spaceIdx = combined.indexOf(' ');
         if (spaceIdx !== -1) {
           last_name = combined.slice(0, spaceIdx).trim();
@@ -141,7 +188,11 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
   });
 
   if (rows.length === 0) {
-    return { ok: false, error: 'No valid rows found after parsing. Check warnings above.' };
+    return {
+      ok: false,
+      error:
+        'No valid data rows found after the header row. Make sure the file has at least one student record.',
+    };
   }
 
   return { ok: true, rows, warnings };
