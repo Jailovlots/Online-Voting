@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { signIn, signUp } from '@/lib/auth.functions';
 import { saveToken } from '@/lib/session-store';
@@ -10,21 +10,34 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 const COURSES = ['BPED', 'BSIS', 'ACT'] as const;
 
+const authSearchSchema = z.object({
+  mode: z.enum(['signin', 'signup']).optional(),
+});
+
 export const Route = createFileRoute('/auth')({
+  validateSearch: (search) => authSearchSchema.parse(search),
   head: () => ({ meta: [{ title: 'Sign in — StudentGov' }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<'signin' | 'signup'>(search.mode || 'signin');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const signInFn = useServerFn(signIn);
   const signUpFn = useServerFn(signUp);
+
+  useEffect(() => {
+    if (search.mode) {
+      setMode(search.mode);
+    }
+  }, [search.mode]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

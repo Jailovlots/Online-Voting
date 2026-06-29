@@ -57,7 +57,7 @@ function Index() {
             <Link to="/auth" className="rounded-md bg-gold text-gold-foreground px-6 py-3 font-medium hover:opacity-90 shadow-lg">
               Sign in with Student ID
             </Link>
-            <Link to="/auth" className="rounded-md border border-white/30 px-6 py-3 font-medium hover:bg-white/10 backdrop-blur">
+            <Link to="/auth" search={{ mode: 'signup' }} className="rounded-md border border-white/30 px-6 py-3 font-medium hover:bg-white/10 backdrop-blur">
               Create account
             </Link>
           </div>
