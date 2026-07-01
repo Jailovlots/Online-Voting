@@ -84,25 +84,138 @@ function Candidates() {
       </div>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <DialogContent className="max-w-2xl">
-          {selected && (
-            <>
-              <DialogHeader>
-                <Badge variant="outline" className="w-fit">{selected.position?.title}</Badge>
-                <DialogTitle className="font-display text-2xl">{selected.full_name}</DialogTitle>
-                <DialogDescription>{selected.party}</DialogDescription>
-              </DialogHeader>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-                  {selected.photo_url && <img src={selected.photo_url} alt={selected.full_name} className="w-full h-full object-cover" />}
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto pr-2">
+          {selected && (() => {
+            const parsedBio = (() => {
+              let initialBio = {
+                age: "",
+                address: "",
+                municipality: "",
+                province: "",
+                sex: "",
+                dateOfBirth: "",
+                birthPlace: "",
+                religion: "",
+                nationality: "",
+                courseYear: "",
+                reasonForRunning: ""
+              };
+              if (selected.bio) {
+                try {
+                  const parsed = JSON.parse(selected.bio);
+                  if (parsed && typeof parsed === 'object') {
+                    initialBio = { ...initialBio, ...parsed };
+                  }
+                } catch (e) {
+                  initialBio.reasonForRunning = selected.bio;
+                }
+              }
+              return initialBio;
+            })();
+
+            return (
+              <>
+                <DialogHeader className="border-b pb-4 mb-4">
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <div className="size-16 sm:size-20 rounded-full overflow-hidden bg-muted flex-shrink-0 border border-border">
+                      {selected.photo_url ? (
+                        <img src={selected.photo_url} alt={selected.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground font-bold text-xl uppercase">
+                          {selected.full_name.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <DialogTitle className="font-display text-2xl font-bold">{selected.full_name}</DialogTitle>
+                        <Badge variant="outline">{selected.position?.title}</Badge>
+                      </div>
+                      <DialogDescription className="text-base text-muted-foreground">
+                        {selected.party || "Independent Candidate"}
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                <div className="grid md:grid-cols-2 gap-6 text-sm">
+                  {/* Biography & Personal Information Column */}
+                  <div className="space-y-5">
+                    <div>
+                      <h4 className="font-display text-lg font-bold text-foreground mb-3">Biography</h4>
+                      
+                      <div className="space-y-4">
+                        <h5 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Personal Information</h5>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 border rounded-xl p-4 bg-muted/20">
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Full Name</span>
+                            <span className="font-semibold text-foreground">{selected.full_name || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Age</span>
+                            <span className="font-semibold text-foreground">{parsedBio.age || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Sex</span>
+                            <span className="font-semibold text-foreground">{parsedBio.sex || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Date of Birth</span>
+                            <span className="font-semibold text-foreground">{parsedBio.dateOfBirth || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5 col-span-2">
+                            <span className="text-xs text-muted-foreground block font-medium">Course/Year</span>
+                            <span className="font-semibold text-foreground">{parsedBio.courseYear || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Religion</span>
+                            <span className="font-semibold text-foreground">{parsedBio.religion || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Nationality</span>
+                            <span className="font-semibold text-foreground">{parsedBio.nationality || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5 col-span-2">
+                            <span className="text-xs text-muted-foreground block font-medium">Birth Place</span>
+                            <span className="font-semibold text-foreground">{parsedBio.birthPlace || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5 col-span-2">
+                            <span className="text-xs text-muted-foreground block font-medium">Address</span>
+                            <span className="font-semibold text-foreground">{parsedBio.address || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Municipality</span>
+                            <span className="font-semibold text-foreground">{parsedBio.municipality || "—"}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-xs text-muted-foreground block font-medium">Province</span>
+                            <span className="font-semibold text-foreground">{parsedBio.province || "—"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h5 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Reason for Running</h5>
+                      <p className="text-sm text-foreground bg-accent/20 p-4 rounded-xl border leading-relaxed">
+                        {parsedBio.reasonForRunning || "No reason provided."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Platform & Advocacy Column */}
+                  <div className="space-y-3">
+                    <h4 className="font-display text-lg font-bold text-foreground mb-3">Platform & Advocacy</h4>
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-5 min-h-[250px]">
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {selected.platform || "No platform details provided."}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="md:col-span-2 space-y-3 text-sm">
-                  <div><div className="font-medium mb-1">Biography</div><p className="text-muted-foreground">{selected.bio}</p></div>
-                  <div><div className="font-medium mb-1">Platform & advocacy</div><p className="text-muted-foreground">{selected.platform}</p></div>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

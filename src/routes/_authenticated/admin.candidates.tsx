@@ -45,6 +45,33 @@ function AdminCandidates() {
   const [editing, setEditing] = useState<any>(null);
   const [photoUrl, setPhotoUrl] = useState("");
 
+  const parsedBio = (() => {
+    let initialBio = {
+      age: "",
+      address: "",
+      municipality: "",
+      province: "",
+      sex: "",
+      dateOfBirth: "",
+      birthPlace: "",
+      religion: "",
+      nationality: "",
+      courseYear: "",
+      reasonForRunning: ""
+    };
+    if (editing?.bio) {
+      try {
+        const parsed = JSON.parse(editing.bio);
+        if (parsed && typeof parsed === 'object') {
+          initialBio = { ...initialBio, ...parsed };
+        }
+      } catch (e) {
+        initialBio.reasonForRunning = editing.bio;
+      }
+    }
+    return initialBio;
+  })();
+
   const upsert = useMutation({
     mutationFn: upFn,
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries(); setOpen(false); setEditing(null); },
@@ -119,20 +146,33 @@ function AdminCandidates() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto pr-2">
           <DialogHeader><DialogTitle>{editing ? "Edit candidate" : "New candidate"}</DialogTitle></DialogHeader>
           <form
             className="space-y-3"
             onSubmit={(e) => {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
+              const bioObj = {
+                age: String(fd.get("bio_age") || ""),
+                address: String(fd.get("bio_address") || ""),
+                municipality: String(fd.get("bio_municipality") || ""),
+                province: String(fd.get("bio_province") || ""),
+                sex: String(fd.get("bio_sex") || ""),
+                dateOfBirth: String(fd.get("bio_dateOfBirth") || ""),
+                birthPlace: String(fd.get("bio_birthPlace") || ""),
+                religion: String(fd.get("bio_religion") || ""),
+                nationality: String(fd.get("bio_nationality") || ""),
+                courseYear: String(fd.get("bio_courseYear") || ""),
+                reasonForRunning: String(fd.get("bio_reasonForRunning") || ""),
+              };
               upsert.mutate({
                 data: {
                   id: editing?.id,
                   position_id: String(fd.get("position_id")),
                   full_name: String(fd.get("full_name")),
                   party: String(fd.get("party") || "") || null,
-                  bio: String(fd.get("bio") || "") || null,
+                  bio: JSON.stringify(bioObj),
                   platform: String(fd.get("platform") || "") || null,
                   photo_url: photoUrl || null,
                   approved: true,
@@ -157,7 +197,55 @@ function AdminCandidates() {
               uploadImageFn={uploadImageFn}
               label="Candidate Photo"
             />
-            <div><Label>Bio</Label><Textarea name="bio" defaultValue={editing?.bio ?? ""} /></div>
+            <div className="border-t pt-3 space-y-3">
+              <h3 className="font-display text-sm font-semibold text-foreground">Biography & Personal Information</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Age</Label>
+                  <Input name="bio_age" defaultValue={parsedBio.age} />
+                </div>
+                <div>
+                  <Label>Sex</Label>
+                  <Input name="bio_sex" defaultValue={parsedBio.sex} />
+                </div>
+                <div>
+                  <Label>Date of Birth</Label>
+                  <Input name="bio_dateOfBirth" type="date" defaultValue={parsedBio.dateOfBirth} />
+                </div>
+                <div>
+                  <Label>Course/Year</Label>
+                  <Input name="bio_courseYear" placeholder="e.g. BSIS 3" defaultValue={parsedBio.courseYear} />
+                </div>
+                <div>
+                  <Label>Religion</Label>
+                  <Input name="bio_religion" defaultValue={parsedBio.religion} />
+                </div>
+                <div>
+                  <Label>Nationality</Label>
+                  <Input name="bio_nationality" defaultValue={parsedBio.nationality} />
+                </div>
+                <div>
+                  <Label>Municipality</Label>
+                  <Input name="bio_municipality" defaultValue={parsedBio.municipality} />
+                </div>
+                <div>
+                  <Label>Province</Label>
+                  <Input name="bio_province" defaultValue={parsedBio.province} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Birth Place</Label>
+                  <Input name="bio_birthPlace" defaultValue={parsedBio.birthPlace} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Address</Label>
+                  <Input name="bio_address" defaultValue={parsedBio.address} />
+                </div>
+                <div className="col-span-2">
+                  <Label>Reason for Running</Label>
+                  <Textarea name="bio_reasonForRunning" placeholder="Explain your reason for running..." defaultValue={parsedBio.reasonForRunning} />
+                </div>
+              </div>
+            </div>
             <div><Label>Platform</Label><Textarea name="platform" defaultValue={editing?.platform ?? ""} /></div>
             <DialogFooter><Button type="submit" disabled={upsert.isPending}>{upsert.isPending ? "Saving…" : "Save"}</Button></DialogFooter>
           </form>

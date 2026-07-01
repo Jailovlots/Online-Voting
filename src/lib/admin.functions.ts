@@ -96,7 +96,7 @@ export const upsertCandidate = createServerFn({ method: 'POST' })
         position_id: z.string().uuid(),
         full_name: z.string().min(2).max(120),
         party: z.string().max(80).optional().nullable(),
-        bio: z.string().max(800).optional().nullable(),
+        bio: z.string().max(4000).optional().nullable(),
         platform: z.string().max(800).optional().nullable(),
         photo_url: z.string().optional().nullable(),
         approved: z.boolean().optional(),
