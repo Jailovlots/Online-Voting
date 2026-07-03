@@ -154,7 +154,7 @@ function AuthPage() {
               </>
             )}
             <div>
-              <Label htmlFor="email">School email</Label>
+              <Label htmlFor="email">Your email</Label>
               <Input id="email" name="email" type="email" required maxLength={255} />
             </div>
             <div>
