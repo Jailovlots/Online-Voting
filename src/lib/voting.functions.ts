@@ -26,7 +26,7 @@ export const castVote = createServerFn({ method: 'POST' })
 
     // ── Guard 1: Registration / Approval ─────────────────────────────────────
     const { rows: profileRows } = await db.query(
-      'SELECT is_registered FROM public.profiles WHERE id = $1 LIMIT 1',
+      'SELECT is_registered, year_level, course FROM public.profiles WHERE id = $1 LIMIT 1',
       [userId],
     );
     if (!profileRows[0]) throw new Error('Student profile not found.');
@@ -35,6 +35,8 @@ export const castVote = createServerFn({ method: 'POST' })
         'Your account has not been approved yet. Please wait for an admin to approve your registration before voting.',
       );
     }
+    const voterYearLevel: number | null = profileRows[0].year_level ?? null;
+    const voterCourse: string | null = profileRows[0].course ?? null;
 
     // Verify election exists and is active
     const { rows: electionRows } = await db.query(
@@ -59,17 +61,45 @@ export const castVote = createServerFn({ method: 'POST' })
     const entries = Object.entries(data.selections);
     if (entries.length === 0) throw new Error('Select at least one candidate');
 
-    // Verify max_winners constraints
-    const { rows: positions } = await db.query('SELECT id, max_winners FROM public.positions');
-    const positionMap = new Map(positions.map((p: any) => [p.id, p.max_winners]));
+    // Verify max_winners constraints AND position eligibility restrictions
+    const { rows: positions } = await db.query(
+      'SELECT id, max_winners, allowed_year_levels, allowed_courses, title FROM public.positions',
+    );
+    const positionMap = new Map(positions.map((p: any) => [p.id, p]));
 
     for (const [position_id, candidate_ids] of entries) {
-      const max = Number(positionMap.get(position_id) ?? 1);
+      const pos = positionMap.get(position_id) as any;
+      if (!pos) continue;
+
+      const max = Number(pos.max_winners ?? 1);
       const count = Array.isArray(candidate_ids) ? candidate_ids.length : 1;
       if (count > max) {
         throw new Error(`You selected too many candidates for a position. Max allowed: ${max}`);
       }
+
+      // ── Guard 3: Position eligibility (year level & course) ────────────────
+      const allowedYears: number[] | null = pos.allowed_year_levels ?? null;
+      const allowedCourses: string[] | null = pos.allowed_courses ?? null;
+
+      if (allowedYears && allowedYears.length > 0) {
+        if (voterYearLevel === null || !allowedYears.includes(voterYearLevel)) {
+          throw new Error(
+            `You are not eligible to vote for "${pos.title}". This position is restricted to Year ${allowedYears.join(' or ')} students only.`,
+          );
+        }
+      }
+
+      if (allowedCourses && allowedCourses.length > 0) {
+        const normalizedVoterCourse = (voterCourse ?? '').trim().toUpperCase();
+        const normalizedAllowed = allowedCourses.map((c: string) => c.trim().toUpperCase());
+        if (!normalizedAllowed.includes(normalizedVoterCourse)) {
+          throw new Error(
+            `You are not eligible to vote for "${pos.title}". This position is restricted to ${allowedCourses.join(' or ')} students only.`,
+          );
+        }
+      }
     }
+
 
     // Insert votes
     const client = await db.connect();

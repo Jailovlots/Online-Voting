@@ -1,13 +1,13 @@
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getPositions, getApprovedCandidates, getActiveElection, getMyRegistrationStatus } from "@/lib/queries.server";
+import { getPositions, getApprovedCandidates, getActiveElection, getMyRegistrationStatus, getMyProfile } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
-import { Check, Vote, ShieldCheck, ShieldX, Clock } from "lucide-react";
+import { Check, Vote, ShieldCheck, ShieldX, Clock, Lock } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { castVote, hasVoted } from "@/lib/voting.functions";
 import { toast } from "sonner";
@@ -26,15 +26,17 @@ function VotePage() {
   const getApprovedCandidatesFn = useServerFn(getApprovedCandidates);
   const getActiveElectionFn = useServerFn(getActiveElection);
   const getRegistrationFn = useServerFn(getMyRegistrationStatus);
+  const getMyProfileFn = useServerFn(getMyProfile);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["ballot"],
     queryFn: async () => {
-      const [positions, candidates, election, registration] = await Promise.all([
+      const [positions, candidates, election, registration, profile] = await Promise.all([
         getPositionsFn(),
         getApprovedCandidatesFn(),
         getActiveElectionFn(),
         getRegistrationFn(),
+        getMyProfileFn(),
       ]);
       let voted = false;
       if (election) {
@@ -47,11 +49,14 @@ function VotePage() {
         election,
         voted,
         isApproved: registration?.isApproved ?? false,
+        yearLevel: profile?.year_level ?? null,
+        course: (profile?.course ?? "").trim().toUpperCase(),
       };
     },
-    staleTime: 0,           // Never serve stale registration data
-    refetchOnWindowFocus: true, // Re-fetch when student switches back to this tab
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
+
 
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -192,6 +197,53 @@ function VotePage() {
         const cands = data.candidates.filter((c) => c.position_id === pos.id);
         const maxWinners = pos.max_winners ?? 1;
 
+        // ── Eligibility check ──────────────────────────────────────────────────
+        const allowedYears: number[] | null = pos.allowed_year_levels ?? null;
+        const allowedCourses: string[] | null = pos.allowed_courses ?? null;
+
+        let isEligible = true;
+        let lockReason = "";
+
+        if (allowedYears && allowedYears.length > 0) {
+          if (data.yearLevel === null || !allowedYears.includes(data.yearLevel)) {
+            isEligible = false;
+            lockReason = `Year ${allowedYears.join(" or ")} students only`;
+          }
+        }
+        if (isEligible && allowedCourses && allowedCourses.length > 0) {
+          const normalizedVoter = (data.course ?? "").trim().toUpperCase();
+          const normalizedAllowed = allowedCourses.map((c: string) => c.trim().toUpperCase());
+          if (!normalizedAllowed.includes(normalizedVoter)) {
+            isEligible = false;
+            lockReason = lockReason
+              ? `${lockReason} · ${allowedCourses.join(" or ")} course`
+              : `${allowedCourses.join(" or ")} course students only`;
+          }
+        }
+
+        // ── Locked position card ───────────────────────────────────────────────
+        if (!isEligible) {
+          return (
+            <Card key={pos.id} className="p-6 opacity-50 select-none border-dashed">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <Badge variant="outline">{pos.title}</Badge>
+                  <p className="text-sm text-muted-foreground mt-1">{pos.description || pos.title}</p>
+                </div>
+                <div className="flex-shrink-0 flex items-center gap-1.5 text-xs text-muted-foreground bg-muted rounded-full px-3 py-1.5">
+                  <Lock className="size-3" />
+                  Not eligible
+                </div>
+              </div>
+              <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <Lock className="size-4" />
+                <span>Restricted to <strong>{lockReason}</strong>. You cannot vote for this position.</span>
+              </div>
+            </Card>
+          );
+        }
+
+        // ── Normal votable card ────────────────────────────────────────────────
         return (
           <Card key={pos.id} className="p-6">
             <div className="mb-4">
@@ -239,7 +291,13 @@ function VotePage() {
       <div className="sticky bottom-4 z-10">
         <Card className="p-4 flex flex-wrap items-center justify-between gap-4 shadow-[var(--shadow-elegant)]">
           <div className="text-sm">
-            <span className="font-medium">{Object.keys(selections).length}</span> of {data.positions.length} positions selected
+            <span className="font-medium">{Object.keys(selections).length}</span> of {data.positions.filter((pos: any) => {
+              const allowedYears: number[] | null = pos.allowed_year_levels ?? null;
+              const allowedCourses: string[] | null = pos.allowed_courses ?? null;
+              if (allowedYears && allowedYears.length > 0 && (data.yearLevel === null || !allowedYears.includes(data.yearLevel))) return false;
+              if (allowedCourses && allowedCourses.length > 0 && !allowedCourses.map((c: string) => c.toUpperCase()).includes(data.course)) return false;
+              return true;
+            }).length} eligible positions selected
           </div>
           <Button disabled={!hasAtLeastOneSelection} onClick={() => setConfirmOpen(true)} className="bg-gold text-gold-foreground hover:bg-gold/90">
             <Vote className="size-4 mr-2" /> Review &amp; submit

@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS public.positions (
   description TEXT,
   max_winners INT NOT NULL DEFAULT 1,
   order_index INT NOT NULL DEFAULT 0,
+  allowed_year_levels INT[] DEFAULT NULL,   -- NULL = no restriction (all year levels)
+  allowed_courses TEXT[] DEFAULT NULL,      -- NULL = no restriction (all courses)
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

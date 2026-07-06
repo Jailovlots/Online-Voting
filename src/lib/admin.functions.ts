@@ -301,6 +301,8 @@ export const upsertPosition = createServerFn({ method: 'POST' })
         description: z.string().max(800).optional().nullable(),
         max_winners: z.coerce.number().min(1).max(100),
         order_index: z.coerce.number().min(0).optional(),
+        allowed_year_levels: z.array(z.coerce.number().min(1).max(6)).nullable().optional(),
+        allowed_courses: z.array(z.string().min(1).max(80)).nullable().optional(),
       })
       .parse(d),
   )
@@ -309,14 +311,23 @@ export const upsertPosition = createServerFn({ method: 'POST' })
     const data = ctx.data as any;
     await ensureAdmin(context);
     
+    const yearLevels = data.allowed_year_levels && data.allowed_year_levels.length > 0
+      ? data.allowed_year_levels
+      : null;
+    const courses = data.allowed_courses && data.allowed_courses.length > 0
+      ? data.allowed_courses
+      : null;
+
     if (data.id) {
       await context.db.query(
         `UPDATE public.positions 
-         SET title=$1, description=$2, max_winners=$3, order_index=COALESCE($4, order_index) 
-         WHERE id=$5`,
-        [data.title, data.description ?? null, data.max_winners, data.order_index ?? null, data.id],
+         SET title=$1, description=$2, max_winners=$3, order_index=COALESCE($4, order_index),
+             allowed_year_levels=$5, allowed_courses=$6
+         WHERE id=$7`,
+        [data.title, data.description ?? null, data.max_winners, data.order_index ?? null,
+         yearLevels, courses, data.id],
       );
-      await log(context, 'position_update', data.id, { title: data.title, max_winners: data.max_winners });
+      await log(context, 'position_update', data.id, { title: data.title, max_winners: data.max_winners, yearLevels, courses });
     } else {
       let orderIndex = data.order_index;
       if (orderIndex === undefined) {
@@ -324,14 +335,15 @@ export const upsertPosition = createServerFn({ method: 'POST' })
         orderIndex = (rows[0]?.max ?? 0) + 1;
       }
       const { rows } = await context.db.query(
-        `INSERT INTO public.positions (title, description, max_winners, order_index)
-         VALUES ($1, $2, $3, $4) RETURNING id`,
-        [data.title, data.description ?? null, data.max_winners, orderIndex],
+        `INSERT INTO public.positions (title, description, max_winners, order_index, allowed_year_levels, allowed_courses)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [data.title, data.description ?? null, data.max_winners, orderIndex, yearLevels, courses],
       );
-      await log(context, 'position_create', rows[0]?.id, { title: data.title, max_winners: data.max_winners });
+      await log(context, 'position_create', rows[0]?.id, { title: data.title, max_winners: data.max_winners, yearLevels, courses });
     }
     return { ok: true };
   });
+
 
 export const deletePosition = createServerFn({ method: 'POST' })
   .middleware([requireAuth])
