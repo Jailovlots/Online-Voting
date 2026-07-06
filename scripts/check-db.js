@@ -19,9 +19,18 @@ if (fs.existsSync(envPath)) {
   });
 }
 
+let dbConnectionString = process.env.DATABASE_URL;
+if (dbConnectionString) {
+  dbConnectionString = dbConnectionString
+    .replace('sslmode=require', 'sslmode=verify-full')
+    .replace('sslmode=prefer', 'sslmode=verify-full')
+    .replace('sslmode=verify-ca', 'sslmode=verify-full');
+}
+const isNeonOrVercel = dbConnectionString?.includes('neon.tech') || dbConnectionString?.includes('vercel-storage.com');
+
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
+  connectionString: dbConnectionString,
+  ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
 });
 
 const SALT = 'sg-voting-2026-salt';

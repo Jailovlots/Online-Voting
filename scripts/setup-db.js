@@ -35,13 +35,18 @@ const dbConfig = {
 const databaseName = process.env.PG_DATABASE || 'onlineVoting_db';
 
 async function runSetup() {
-  const connectionString = process.env.DATABASE_URL;
+  let connectionString = process.env.DATABASE_URL;
 
   if (connectionString) {
     console.log('Connecting via DATABASE_URL to run setup script...');
+    connectionString = connectionString
+      .replace('sslmode=require', 'sslmode=verify-full')
+      .replace('sslmode=prefer', 'sslmode=verify-full')
+      .replace('sslmode=verify-ca', 'sslmode=verify-full');
+    const isNeonOrVercel = connectionString.includes('neon.tech') || connectionString.includes('vercel-storage.com');
     const pool = new pg.Pool({
       connectionString,
-      ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
+      ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
     });
     const client = await pool.connect();
     

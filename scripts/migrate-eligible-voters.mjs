@@ -19,11 +19,20 @@ const vars = Object.fromEntries(
     }),
 );
 
+let dbConnectionString = vars.DATABASE_URL;
+if (dbConnectionString) {
+  dbConnectionString = dbConnectionString
+    .replace('sslmode=require', 'sslmode=verify-full')
+    .replace('sslmode=prefer', 'sslmode=verify-full')
+    .replace('sslmode=verify-ca', 'sslmode=verify-full');
+}
+const isNeonOrVercel = dbConnectionString?.includes('neon.tech') || dbConnectionString?.includes('vercel-storage.com');
+
 const pool = new Pool(
-  vars.DATABASE_URL
+  dbConnectionString
     ? {
-        connectionString: vars.DATABASE_URL,
-        ssl: vars.DATABASE_URL.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
+        connectionString: dbConnectionString,
+        ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
       }
     : {
         host: vars.PG_HOST || 'localhost',

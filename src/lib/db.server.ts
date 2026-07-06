@@ -6,12 +6,20 @@ let _pool: Pool | undefined;
 
 export function getDb(): Pool {
   if (!_pool) {
-    const connectionString = process.env.DATABASE_URL;
+    let connectionString = process.env.DATABASE_URL;
 
     if (connectionString) {
+      // Silence pg connection warnings by replacing sslmode aliases with verify-full
+      connectionString = connectionString
+        .replace('sslmode=require', 'sslmode=verify-full')
+        .replace('sslmode=prefer', 'sslmode=verify-full')
+        .replace('sslmode=verify-ca', 'sslmode=verify-full');
+
+      const isNeonOrVercel = connectionString.includes('neon.tech') || connectionString.includes('vercel-storage.com');
+
       _pool = new Pool({
         connectionString,
-        ssl: connectionString.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
+        ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
         max: 50,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
