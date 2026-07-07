@@ -39,10 +39,14 @@ async function runSetup() {
 
   if (connectionString) {
     console.log('Connecting via DATABASE_URL to run setup script...');
-    connectionString = connectionString
-      .replace('sslmode=require', 'sslmode=verify-full')
-      .replace('sslmode=prefer', 'sslmode=verify-full')
-      .replace('sslmode=verify-ca', 'sslmode=verify-full');
+    try {
+      const parsedUrl = new URL(connectionString);
+      parsedUrl.searchParams.delete('sslmode');
+      parsedUrl.searchParams.delete('channel_binding');
+      connectionString = parsedUrl.toString();
+    } catch (err) {
+      // Ignore URL parsing errors
+    }
     const isNeonOrVercel = connectionString.includes('neon.tech') || connectionString.includes('vercel-storage.com');
     const pool = new pg.Pool({
       connectionString,

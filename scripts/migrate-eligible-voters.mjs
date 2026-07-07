@@ -21,10 +21,14 @@ const vars = Object.fromEntries(
 
 let dbConnectionString = vars.DATABASE_URL;
 if (dbConnectionString) {
-  dbConnectionString = dbConnectionString
-    .replace('sslmode=require', 'sslmode=verify-full')
-    .replace('sslmode=prefer', 'sslmode=verify-full')
-    .replace('sslmode=verify-ca', 'sslmode=verify-full');
+  try {
+    const parsedUrl = new URL(dbConnectionString);
+    parsedUrl.searchParams.delete('sslmode');
+    parsedUrl.searchParams.delete('channel_binding');
+    dbConnectionString = parsedUrl.toString();
+  } catch (err) {
+    // Ignore URL parsing errors
+  }
 }
 const isNeonOrVercel = dbConnectionString?.includes('neon.tech') || dbConnectionString?.includes('vercel-storage.com');
 

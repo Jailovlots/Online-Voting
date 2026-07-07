@@ -9,20 +9,23 @@ export function getDb(): Pool {
     let connectionString = process.env.DATABASE_URL;
 
     if (connectionString) {
-      // Silence pg connection warnings by replacing sslmode aliases with verify-full
-      connectionString = connectionString
-        .replace('sslmode=require', 'sslmode=verify-full')
-        .replace('sslmode=prefer', 'sslmode=verify-full')
-        .replace('sslmode=verify-ca', 'sslmode=verify-full');
+      try {
+        const parsedUrl = new URL(connectionString);
+        parsedUrl.searchParams.delete('sslmode');
+        parsedUrl.searchParams.delete('channel_binding');
+        connectionString = parsedUrl.toString();
+      } catch (err) {
+        // Ignore URL parsing errors
+      }
 
       const isNeonOrVercel = connectionString.includes('neon.tech') || connectionString.includes('vercel-storage.com');
 
       _pool = new Pool({
         connectionString,
         ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
-        max: 50,
+        max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
+        connectionTimeoutMillis: 15000,
       });
     } else {
       const host = process.env.PG_HOST ?? 'localhost';
