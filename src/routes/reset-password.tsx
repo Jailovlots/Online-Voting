@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useServerFn } from '@tanstack/react-start';
-import { updatePassword } from '@/lib/auth.functions';
+import { api } from '@/lib/api-client';
 import { clearToken } from '@/lib/session-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +18,6 @@ function ResetPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const updatePasswordFn = useServerFn(updatePassword);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +25,7 @@ function ResetPage() {
     const password = String(fd.get('password') || '');
     setLoading(true);
     try {
-      await updatePasswordFn({ data: { password } });
+      await api.auth.updatePassword(password);
       toast.success('Password updated. Please sign in again.');
       clearToken();
       navigate({ to: '/auth', replace: true });

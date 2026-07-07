@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, Navigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
-import { getMyProfile, getMyRoles } from '@/lib/queries.server';
+import { api } from '@/lib/api-client';
 import { AppShell } from '@/components/app-shell';
 
 // Routes that officers are allowed to access
@@ -16,18 +15,17 @@ export const Route = createFileRoute('/_authenticated/admin')({
 });
 
 function AdminLayout() {
-  const profileFn = useServerFn(getMyProfile);
-  const rolesFn = useServerFn(getMyRoles);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const { data, isLoading } = useQuery({
     queryKey: ['me', 'admin'],
     queryFn: async () => {
-      const [profile, roles] = await Promise.all([profileFn(), rolesFn()]);
+      const rolesData = await api.queries.roles();
+      const profile = await api.queries.profile();
       return {
         profile,
-        isAdmin: roles.includes('admin'),
-        isOfficer: roles.includes('officer'),
+        isAdmin: rolesData.isAdmin,
+        isOfficer: rolesData.roles.includes('officer'),
       };
     },
   });

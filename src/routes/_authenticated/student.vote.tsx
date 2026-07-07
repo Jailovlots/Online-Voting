@@ -1,15 +1,13 @@
 import * as React from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getPositions, getApprovedCandidates, getActiveElection, getMyRegistrationStatus, getMyProfile } from "@/lib/queries.server";
+import { api } from "@/lib/api-client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { Check, Vote, ShieldCheck, ShieldX, Clock, Lock } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
-import { castVote, hasVoted } from "@/lib/voting.functions";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -20,37 +18,29 @@ export const Route = createFileRoute("/_authenticated/student/vote")({
 
 function VotePage() {
   const navigate = useNavigate();
-  const castFn = useServerFn(castVote);
-  const hasVotedFn = useServerFn(hasVoted);
-  const getPositionsFn = useServerFn(getPositions);
-  const getApprovedCandidatesFn = useServerFn(getApprovedCandidates);
-  const getActiveElectionFn = useServerFn(getActiveElection);
-  const getRegistrationFn = useServerFn(getMyRegistrationStatus);
-  const getMyProfileFn = useServerFn(getMyProfile);
-
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["ballot"],
     queryFn: async () => {
       const [positions, candidates, election, registration, profile] = await Promise.all([
-        getPositionsFn(),
-        getApprovedCandidatesFn(),
-        getActiveElectionFn(),
-        getRegistrationFn(),
-        getMyProfileFn(),
+        api.queries.positions(),
+        api.queries.candidatesApproved(),
+        api.queries.activeElection(),
+        api.queries.registrationStatus(),
+        api.queries.profile(),
       ]);
       let voted = false;
       if (election) {
-        const r = await hasVotedFn({ data: { electionId: election.id } });
+        const r = await api.voting.hasVoted(election.id);
         voted = r.voted;
       }
       return {
-        positions: positions ?? [],
-        candidates: candidates ?? [],
-        election,
+        positions: (positions as any) ?? [],
+        candidates: (candidates as any) ?? [],
+        election: election as any,
         voted,
         isApproved: registration?.isApproved ?? false,
         yearLevel: profile?.year_level ?? null,
-        course: (profile?.course ?? "").trim().toUpperCase(),
+        course: (String(profile?.course ?? "")).trim().toUpperCase(),
       };
     },
     staleTime: 0,
@@ -144,7 +134,7 @@ function VotePage() {
   async function submit() {
     setSubmitting(true);
     try {
-      const r = await castFn({ data: { electionId: election.id, selections } });
+      const r = await api.voting.cast(election.id, selections);
       setReceipt(r.receipt);
       setConfirmOpen(false);
       refetch();

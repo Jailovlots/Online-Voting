@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getAnnouncements } from "@/lib/queries.server";
+import { api } from "@/lib/api-client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Megaphone } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/student/announcements")({
   head: () => ({ meta: [{ title: "Announcements — StudentGov" }] }),
@@ -13,12 +12,9 @@ export const Route = createFileRoute("/_authenticated/student/announcements")({
 });
 
 function AnnouncementsPage() {
-  const getAnnouncementsFn = useServerFn(getAnnouncements);
   const { data } = useQuery({
     queryKey: ["announcements"],
-    queryFn: async () => {
-      return await getAnnouncementsFn();
-    },
+    queryFn: () => api.queries.announcements(),
   });
 
 

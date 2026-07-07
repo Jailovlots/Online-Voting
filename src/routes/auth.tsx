@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
-import { useServerFn } from '@tanstack/react-start';
-import { signIn, signUp } from '@/lib/auth.functions';
+import { api } from '@/lib/api-client';
 import { saveToken } from '@/lib/session-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,8 +29,6 @@ function AuthPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>(search.mode || 'signin');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const signInFn = useServerFn(signIn);
-  const signUpFn = useServerFn(signUp);
 
   useEffect(() => {
     if (search.mode) {
@@ -58,12 +55,12 @@ function AuthPage() {
         const course = String(fd.get('course') || '').trim();
         const year_level = String(fd.get('year_level') || '1');
         const section = String(fd.get('section') || '').trim();
-        await signUpFn({ data: { email, password, full_name, student_id, course, year_level, section } });
+        await api.auth.signUp({ email, password, full_name, student_id, course, year_level: Number(year_level), section: section || null });
         toast.success('Account created — you can sign in now.');
         setMode('signin');
         setShowPassword(false);
       } else {
-        const result = await signInFn({ data: { email, password } });
+        const result = await api.auth.signIn(email, password);
         saveToken(result.token);
         toast.success('Welcome back!');
         navigate({ to: result.isAdmin ? '/admin/dashboard' : '/student/dashboard', replace: true });

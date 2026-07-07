@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getPositions, getApprovedCandidates } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
 import { motion } from "framer-motion";
-import { useServerFn } from "@tanstack/react-start";
+import { api } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_authenticated/student/candidates")({
   head: () => ({ meta: [{ title: "Candidates — StudentGov" }] }),
@@ -16,17 +15,14 @@ export const Route = createFileRoute("/_authenticated/student/candidates")({
 });
 
 function Candidates() {
-  const getPositionsFn = useServerFn(getPositions);
-  const getApprovedCandidatesFn = useServerFn(getApprovedCandidates);
-
   const { data } = useQuery({
     queryKey: ["candidates-with-positions"],
     queryFn: async () => {
       const [positions, candidates] = await Promise.all([
-        getPositionsFn(),
-        getApprovedCandidatesFn(),
+        api.queries.positions(),
+        api.queries.candidatesApproved(),
       ]);
-      return { positions: positions ?? [], candidates: candidates ?? [] };
+      return { positions: (positions as any) ?? [], candidates: (candidates as any) ?? [] };
     },
   });
 

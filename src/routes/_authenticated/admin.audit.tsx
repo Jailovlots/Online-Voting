@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getAuditLogs } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { useServerFn } from "@tanstack/react-start";
+import { api } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_authenticated/admin/audit")({
   head: () => ({ meta: [{ title: "Audit logs — Admin" }] }),
@@ -12,10 +11,9 @@ export const Route = createFileRoute("/_authenticated/admin/audit")({
 });
 
 function Audit() {
-  const getAuditLogsFn = useServerFn(getAuditLogs);
   const { data } = useQuery({
     queryKey: ["audit"],
-    queryFn: async () => (await getAuditLogsFn()) ?? [],
+    queryFn: async () => (await api.queries.auditLogs()) ?? [],
   });
 
 

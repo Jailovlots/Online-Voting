@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPositions } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,9 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useServerFn } from "@tanstack/react-start";
-import { upsertPosition, deletePosition } from "@/lib/admin.functions";
 import { Plus, Pencil, Trash2, Award, Lock, Users, GraduationCap } from "lucide-react";
+import { api } from "@/lib/api-client";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,13 +21,10 @@ const YEAR_LEVELS = [1, 2, 3, 4];
 
 function Positions() {
   const qc = useQueryClient();
-  const getPositionsFn = useServerFn(getPositions);
-  const upsertFn = useServerFn(upsertPosition);
-  const deleteFn = useServerFn(deletePosition);
 
   const { data } = useQuery({
     queryKey: ["positions"],
-    queryFn: async () => (await getPositionsFn()) ?? [],
+    queryFn: async () => (await api.queries.positions()) ?? [],
   });
 
   const [open, setOpen] = useState(false);
@@ -38,7 +33,7 @@ function Positions() {
   const [coursesInput, setCoursesInput] = useState("");
 
   const upsert = useMutation({
-    mutationFn: upsertFn,
+    mutationFn: (payload: any) => api.admin.upsertPosition(payload),
     onSuccess: () => {
       toast.success("Position saved successfully");
       qc.invalidateQueries({ queryKey: ["positions"] });
@@ -51,7 +46,7 @@ function Positions() {
   });
 
   const del = useMutation({
-    mutationFn: deleteFn,
+    mutationFn: (id: string) => api.admin.deletePosition(id),
     onSuccess: () => {
       toast.success("Position deleted successfully");
       qc.invalidateQueries({ queryKey: ["positions"] });
@@ -75,7 +70,7 @@ function Positions() {
 
   function handleDelete(id: string, title: string) {
     if (confirm(`Are you sure you want to delete "${title}"? This will also delete all candidates and votes associated with this position.`)) {
-      del.mutate({ data: { id } });
+      del.mutate(id);
     }
   }
 
@@ -181,15 +176,13 @@ function Positions() {
                 .map((c) => c.trim().toUpperCase())
                 .filter(Boolean);
               upsert.mutate({
-                data: {
-                  id: editing?.id,
-                  title: String(fd.get("title")),
-                  description: String(fd.get("description") || "") || null,
-                  max_winners: Number(fd.get("max_winners")),
-                  order_index: Number(fd.get("order_index")),
-                  allowed_year_levels: selectedYears.length > 0 ? selectedYears : null,
-                  allowed_courses: rawCourses.length > 0 ? rawCourses : null,
-                },
+                id: editing?.id,
+                title: String(fd.get("title")),
+                description: String(fd.get("description") || "") || null,
+                max_winners: Number(fd.get("max_winners")),
+                order_index: Number(fd.get("order_index")),
+                allowed_year_levels: selectedYears.length > 0 ? selectedYears : null,
+                allowed_courses: rawCourses.length > 0 ? rawCourses : null,
               });
             }}
           >

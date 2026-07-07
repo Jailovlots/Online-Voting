@@ -1,12 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getPositions, getCandidates, getVotes, getElections } from "@/lib/queries.server";
-import { getVoterParticipationReport } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, XCircle, CheckCircle2, ArrowRight } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 import { Progress } from "@/components/ui/progress";
+import { api } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_authenticated/admin/dashboard")({
   head: () => ({ meta: [{ title: "Voting Status — Admin" }] }),
@@ -14,16 +12,10 @@ export const Route = createFileRoute("/_authenticated/admin/dashboard")({
 });
 
 function AdminDashboard() {
-  const getPositionsFn = useServerFn(getPositions);
-  const getCandidatesFn = useServerFn(getCandidates);
-  const getVotesFn = useServerFn(getVotes);
-  const getElectionsFn = useServerFn(getElections);
-  const getParticipationFn = useServerFn(getVoterParticipationReport);
-
   // Fetch elections list to find the active election
   const { data: elections } = useQuery({
     queryKey: ["admin-elections-list"],
-    queryFn: async () => (await getElectionsFn()) ?? [],
+    queryFn: async () => (await api.queries.elections()) ?? [],
   });
 
   const activeElection = elections?.find((e: any) => e.status === "active") ?? elections?.[0];
@@ -33,7 +25,7 @@ function AdminDashboard() {
     queryKey: ["participation-report", activeElection?.id],
     queryFn: async () => {
       if (!activeElection?.id) return [];
-      return (await getParticipationFn({ data: { electionId: activeElection.id } })) ?? [];
+      return (await api.admin.getVoterReport(activeElection.id)) ?? [];
     },
     enabled: !!activeElection?.id,
     refetchInterval: 10000, // Every 10s — more responsive for live events
@@ -44,11 +36,11 @@ function AdminDashboard() {
     queryKey: ["live-voting-status"],
     queryFn: async () => {
       const [positions, candidates, votes] = await Promise.all([
-        getPositionsFn(),
-        getCandidatesFn(),
-        getVotesFn(),
+        api.queries.positions(),
+        api.queries.candidates(),
+        api.queries.votes(),
       ]);
-      return { positions: positions ?? [], candidates: candidates ?? [], votes: votes ?? [] };
+      return { positions: (positions as any) ?? [], candidates: (candidates as any) ?? [], votes: (votes as any) ?? [] };
     },
     refetchInterval: 8000, // Refresh every 8s for responsive live updates
   });

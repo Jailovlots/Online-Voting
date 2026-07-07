@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getPositions, getCandidates, getVotes, getElections } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Trophy, Printer, Search, Users, CheckCircle2, AlertCircle, Calendar, RefreshCw } from "lucide-react";
-import { useServerFn } from "@tanstack/react-start";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { getVoterParticipationReport } from "@/lib/admin.functions";
+import { api } from "@/lib/api-client";
 import { useState, useMemo, useEffect } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -18,12 +16,6 @@ export const Route = createFileRoute("/_authenticated/admin/results")({
 });
 
 function FinalResults() {
-  const getPositionsFn = useServerFn(getPositions);
-  const getCandidatesFn = useServerFn(getCandidates);
-  const getVotesFn = useServerFn(getVotes);
-  const getElectionsFn = useServerFn(getElections);
-  const getParticipationFn = useServerFn(getVoterParticipationReport);
-
   const qc = useQueryClient();
   const [selectedElectionId, setSelectedElectionId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"results" | "participation">("results");
@@ -42,7 +34,7 @@ function FinalResults() {
   // Fetch elections list
   const { data: elections, isLoading: isElectionsLoading } = useQuery({
     queryKey: ["admin-elections-list"],
-    queryFn: async () => (await getElectionsFn()) ?? [],
+    queryFn: async () => (await api.queries.elections()) ?? [],
   });
 
   // Automatically select the active or first election
@@ -59,12 +51,12 @@ function FinalResults() {
     queryKey: ["final-results", selectedElectionId],
     queryFn: async () => {
       const [positions, candidates, votes] = await Promise.all([
-        getPositionsFn(),
-        getCandidatesFn(),
-        getVotesFn(),
+        api.queries.positions(),
+        api.queries.candidates(),
+        api.queries.votes(),
       ]);
       setLastUpdated(new Date());
-      return { positions: positions ?? [], candidates: candidates ?? [], votes: votes ?? [] };
+      return { positions: (positions as any) ?? [], candidates: (candidates as any) ?? [], votes: (votes as any) ?? [] };
     },
     enabled: !!selectedElectionId,
     refetchInterval: 5000, // Poll every 5s for live results
@@ -75,9 +67,9 @@ function FinalResults() {
     queryKey: ["participation-report", selectedElectionId],
     queryFn: async () => {
       if (!selectedElectionId) return [];
-      const result = (await getParticipationFn({ data: { electionId: selectedElectionId } })) ?? [];
+      const result = (await api.admin.getVoterReport(selectedElectionId)) ?? [];
       setLastUpdated(new Date());
-      return result;
+      return result as any;
     },
     enabled: !!selectedElectionId,
     refetchInterval: 5000, // Poll every 5s for live participation

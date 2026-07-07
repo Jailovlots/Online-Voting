@@ -6,9 +6,7 @@ import { useEffect, useState } from "react";
 import { Vote, Calendar, CheckCircle2, Users, Megaphone, Clock } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { motion } from "framer-motion";
-import { useServerFn } from "@tanstack/react-start";
-import { hasVoted } from "@/lib/voting.functions";
-import { getDashboardStats, getMyRegistrationStatus } from "@/lib/queries.server";
+import { api } from "@/lib/api-client";
 
 export const Route = createFileRoute("/_authenticated/student/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — StudentGov" }] }),
@@ -31,23 +29,20 @@ function useCountdown(target: Date | null) {
 }
 
 function Dashboard() {
-  const hasVotedFn = useServerFn(hasVoted);
-  const statsFn = useServerFn(getDashboardStats);
-  const getRegistrationFn = useServerFn(getMyRegistrationStatus);
   const { data } = useQuery({
     queryKey: ["student-dashboard"],
     queryFn: async () => {
       const [stats, registration] = await Promise.all([
-        statsFn(),
-        getRegistrationFn(),
+        api.queries.dashboardStudent(),
+        api.queries.registrationStatus(),
       ]);
-      const active = stats.elections.find((e: any) => e.status === "active") ?? stats.elections[0] ?? null;
+      const active = (stats as any).elections.find((e: any) => e.status === "active") ?? (stats as any).elections[0] ?? null;
       let voted = false;
       if (active) {
-        const r = await hasVotedFn({ data: { electionId: active.id } });
+        const r = await api.voting.hasVoted(active.id);
         voted = r.voted;
       }
-      return { active, announcements: stats.announcements, positionCount: stats.positionsCount, candidateCount: stats.candidatesCount, voteCount: stats.votesCount, voted, isApproved: registration?.isApproved ?? false };
+      return { active, announcements: (stats as any).announcements, positionCount: (stats as any).positionsCount, candidateCount: (stats as any).candidatesCount, voteCount: (stats as any).votesCount, voted, isApproved: registration?.isApproved ?? false };
     },
     staleTime: 0,          // Always consider data stale so re-mount forces a fresh fetch
     refetchInterval: 10000, // Poll every 10 s so admin approval reflects within ~10 seconds

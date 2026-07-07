@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getMyProfile } from "@/lib/queries.server";
-import { updateMyProfile, uploadImage } from "@/lib/admin.functions";
+import { api } from "@/lib/api-client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,17 +19,14 @@ export const Route = createFileRoute("/_authenticated/student/profile")({
 
 function ProfilePage() {
   const qc = useQueryClient();
-  const profileFn = useServerFn(getMyProfile);
-  const updateFn = useServerFn(updateMyProfile);
-  const uploadImageFn = useServerFn(uploadImage);
 
   const { data } = useQuery({
     queryKey: ["profile"],
-    queryFn: async () => profileFn(),
+    queryFn: async () => api.queries.profile(),
   });
 
   const update = useMutation({
-    mutationFn: async (patch: any) => updateFn({ data: patch }),
+    mutationFn: async (patch: any) => api.admin.updateMyProfile(patch),
     onSuccess: () => {
       toast.success("Profile updated");
       qc.invalidateQueries({ queryKey: ["profile"] });
@@ -48,7 +43,7 @@ function ProfilePage() {
       <ProfileForm 
         data={data} 
         update={update} 
-        uploadImageFn={uploadImageFn} 
+        uploadImageFn={async ({ data: { base64Data } }) => api.admin.uploadImage(base64Data)} 
       />
     </div>
   );

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getCandidates, getPositions } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useServerFn } from "@tanstack/react-start";
-import { upsertCandidate, deleteCandidate, uploadImage } from "@/lib/admin.functions";
 import { Plus, Pencil, Trash2 } from "lucide-react";
+import { api } from "@/lib/api-client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/image-upload";
@@ -23,20 +21,15 @@ export const Route = createFileRoute("/_authenticated/admin/candidates")({
 
 function AdminCandidates() {
   const qc = useQueryClient();
-  const upFn = useServerFn(upsertCandidate);
-  const delFn = useServerFn(deleteCandidate);
-  const getCandidatesFn = useServerFn(getCandidates);
-  const getPositionsFn = useServerFn(getPositions);
-  const uploadImageFn = useServerFn(uploadImage);
 
   const { data } = useQuery({
     queryKey: ["admin-candidates"],
     queryFn: async () => {
       const [candidates, positions] = await Promise.all([
-        getCandidatesFn(),
-        getPositionsFn(),
+        api.queries.candidates(),
+        api.queries.positions(),
       ]);
-      return { candidates: candidates ?? [], positions: positions ?? [] };
+      return { candidates: (candidates as any) ?? [], positions: (positions as any) ?? [] };
     },
   });
 
@@ -73,12 +66,12 @@ function AdminCandidates() {
   })();
 
   const upsert = useMutation({
-    mutationFn: upFn,
+    mutationFn: (payload: any) => api.admin.upsertCandidate(payload),
     onSuccess: () => { toast.success("Saved"); qc.invalidateQueries(); setOpen(false); setEditing(null); },
     onError: (e: any) => toast.error(e.message),
   });
   const del = useMutation({
-    mutationFn: delFn,
+    mutationFn: (id: string) => api.admin.deleteCandidate(id),
     onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries(); },
     onError: (e: any) => toast.error(e.message),
   });
@@ -130,13 +123,13 @@ function AdminCandidates() {
                     <Badge className={c.approved ? "bg-success" : "bg-warning"}>{c.approved ? "Approved" : "Pending"}</Badge>
                   </td>
                    <td className="p-3">
-                     <div className="flex gap-1 justify-end">
-                     {!c.approved && (
-                       <Button size="sm" onClick={() => upsert.mutate({ data: { ...c, approved: true } })}>Approve</Button>
-                     )}
-                     <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
-                     <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate({ data: { id: c.id } })}><Trash2 className="size-4 text-destructive" /></Button>
-                     </div>
+                      <div className="flex gap-1 justify-end">
+                      {!c.approved && (
+                        <Button size="sm" onClick={() => upsert.mutate({ ...c, approved: true })}>Approve</Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => openEdit(c)}><Pencil className="size-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate(c.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                      </div>
                    </td>
                 </tr>
               );
@@ -167,16 +160,14 @@ function AdminCandidates() {
                 reasonForRunning: String(fd.get("bio_reasonForRunning") || ""),
               };
               upsert.mutate({
-                data: {
-                  id: editing?.id,
-                  position_id: String(fd.get("position_id")),
-                  full_name: String(fd.get("full_name")),
-                  party: String(fd.get("party") || "") || null,
-                  bio: JSON.stringify(bioObj),
-                  platform: String(fd.get("platform") || "") || null,
-                  photo_url: photoUrl || null,
-                  approved: true,
-                },
+                id: editing?.id,
+                position_id: String(fd.get("position_id")),
+                full_name: String(fd.get("full_name")),
+                party: String(fd.get("party") || "") || null,
+                bio: JSON.stringify(bioObj),
+                platform: String(fd.get("platform") || "") || null,
+                photo_url: photoUrl || null,
+                approved: true,
               });
             }}
           >
@@ -194,7 +185,7 @@ function AdminCandidates() {
             <ImageUpload
               value={photoUrl}
               onChange={setPhotoUrl}
-              uploadImageFn={uploadImageFn}
+              uploadImageFn={async ({ data: { base64Data } }) => api.admin.uploadImage(base64Data)}
               label="Candidate Photo"
             />
             <div className="border-t pt-3 space-y-3">

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getElections } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,8 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useServerFn } from "@tanstack/react-start";
-import { setElectionStatus, upsertElection } from "@/lib/admin.functions";
+import { api } from "@/lib/api-client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Plus, Pencil, CalendarDays, Clock } from "lucide-react";
@@ -76,13 +74,10 @@ const blankForm = (): ElectionFormState => {
 
 function ElectionsAdmin() {
   const qc = useQueryClient();
-  const statusFn = useServerFn(setElectionStatus);
-  const upsertFn = useServerFn(upsertElection);
-  const getElectionsFn = useServerFn(getElections);
 
   const { data } = useQuery({
     queryKey: ["elections"],
-    queryFn: async () => (await getElectionsFn()) ?? [],
+    queryFn: async () => (await api.queries.elections()) ?? [],
   });
 
   const [open, setOpen] = useState(false);
@@ -91,7 +86,7 @@ function ElectionsAdmin() {
   // Status change (quick buttons on each card)
   const statusMut = useMutation({
     mutationFn: (v: { id: string; status: ElectionStatus }) =>
-      statusFn({ data: v }),
+      api.admin.setElectionStatus(v.id, v.status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["elections"] });
       toast.success("Election status updated");
@@ -102,15 +97,13 @@ function ElectionsAdmin() {
   // Create / Edit election
   const upsertMut = useMutation({
     mutationFn: (payload: ElectionFormState) =>
-      upsertFn({
-        data: {
-          id: payload.id,
-          title: payload.title,
-          description: payload.description || null,
-          starts_at: fromLocalDatetimeInput(payload.starts_at),
-          ends_at: fromLocalDatetimeInput(payload.ends_at),
-          status: payload.status,
-        },
+      api.admin.upsertElection({
+        id: payload.id,
+        title: payload.title,
+        description: payload.description || null,
+        starts_at: fromLocalDatetimeInput(payload.starts_at),
+        ends_at: fromLocalDatetimeInput(payload.ends_at),
+        status: payload.status,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["elections"] });

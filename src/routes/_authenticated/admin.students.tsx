@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getStudents, updateStudentRegistration, deleteStudent, toggleOfficerRole } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useServerFn } from "@tanstack/react-start";
 import { Check, X, UserCheck, UserX, Trash2, ShieldCheck, ShieldOff, Search } from "lucide-react";
-import { getMyRoles } from "@/lib/queries.server";
+import { api } from "@/lib/api-client";
 import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/students")({
@@ -18,12 +16,6 @@ export const Route = createFileRoute("/_authenticated/admin/students")({
 });
 
 function AdminStudents() {
-  const getStudentsFn = useServerFn(getStudents);
-  const updateRegistrationFn = useServerFn(updateStudentRegistration);
-  const deleteStudentFn = useServerFn(deleteStudent);
-  const toggleOfficerFn = useServerFn(toggleOfficerRole);
-  const getRolesFn = useServerFn(getMyRoles);
-
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "registered" | "pending">("all");
@@ -33,18 +25,18 @@ function AdminStudents() {
 
   const { data: myRoles } = useQuery({
     queryKey: ["my-roles-students-page"],
-    queryFn: () => getRolesFn(),
+    queryFn: () => api.queries.roles(),
   });
-  const isAdmin = myRoles?.includes("admin") ?? false;
+  const isAdmin = myRoles?.isAdmin ?? false;
 
   const { data: students, isLoading, refetch } = useQuery({
     queryKey: ["admin-students"],
-    queryFn: () => getStudentsFn(),
+    queryFn: () => api.admin.getStudents(),
   });
 
   async function toggleRegistration(id: string, currentStatus: boolean) {
     try {
-      await updateRegistrationFn({ data: { id, is_registered: !currentStatus } });
+      await api.admin.updateStudentRegistration(id, !currentStatus);
       toast.success(currentStatus ? "Student registration revoked." : "Student registered successfully.");
       refetch();
     } catch (e: any) {
@@ -57,7 +49,7 @@ function AdminStudents() {
       return;
     }
     try {
-      await deleteStudentFn({ data: { id } });
+      await api.admin.deleteStudent(id);
       toast.success(`Student ${name} deleted successfully.`);
       refetch();
     } catch (e: any) {
@@ -67,7 +59,7 @@ function AdminStudents() {
 
   async function handleToggleOfficer(id: string, name: string, isOfficer: boolean) {
     try {
-      await toggleOfficerFn({ data: { user_id: id, grant: !isOfficer } });
+      await api.admin.toggleOfficer(id, !isOfficer);
       toast.success(
         isOfficer ? `Officer role removed from ${name}.` : `${name} is now an Officer.`
       );

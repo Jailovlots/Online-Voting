@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAnnouncements } from "@/lib/queries.server";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useServerFn } from "@tanstack/react-start";
-import { upsertAnnouncement, deleteAnnouncement } from "@/lib/admin.functions";
 import { Plus, Trash2, Pencil } from "lucide-react";
+import { api } from "@/lib/api-client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -23,18 +21,15 @@ export const Route = createFileRoute("/_authenticated/admin/announcements")({
 
 function AdminAnnouncements() {
   const qc = useQueryClient();
-  const upFn = useServerFn(upsertAnnouncement);
-  const delFn = useServerFn(deleteAnnouncement);
-  const getAnnouncementsFn = useServerFn(getAnnouncements);
   const { data } = useQuery({
     queryKey: ["announcements"],
-    queryFn: async () => (await getAnnouncementsFn()) ?? [],
+    queryFn: async () => (await api.queries.announcements()) ?? [],
   });
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const upsert = useMutation({ mutationFn: upFn, onSuccess: () => { toast.success("Saved"); qc.invalidateQueries(); setOpen(false); }, onError: (e: any) => toast.error(e.message) });
-  const del = useMutation({ mutationFn: delFn, onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries(); }, onError: (e: any) => toast.error(e.message) });
+  const upsert = useMutation({ mutationFn: (payload: any) => api.admin.upsertAnnouncement(payload), onSuccess: () => { toast.success("Saved"); qc.invalidateQueries(); setOpen(false); }, onError: (e: any) => toast.error(e.message) });
+  const del = useMutation({ mutationFn: (id: string) => api.admin.deleteAnnouncement(id), onSuccess: () => { toast.success("Deleted"); qc.invalidateQueries(); }, onError: (e: any) => toast.error(e.message) });
 
   return (
     <div className="space-y-6">
@@ -56,7 +51,7 @@ function AdminAnnouncements() {
               </div>
               <div className="flex gap-1">
                 <Button size="sm" variant="ghost" onClick={() => { setEditing(a); setOpen(true); }}><Pencil className="size-4" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate({ data: { id: a.id } })}><Trash2 className="size-4 text-destructive" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => confirm("Delete?") && del.mutate(a.id)}><Trash2 className="size-4 text-destructive" /></Button>
               </div>
             </div>
           </Card>
@@ -72,12 +67,10 @@ function AdminAnnouncements() {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
               upsert.mutate({
-                data: {
-                  id: editing?.id,
-                  title: String(fd.get("title")),
-                  body: String(fd.get("body")),
-                  pinned: fd.get("pinned") === "on",
-                },
+                id: editing?.id,
+                title: String(fd.get("title")),
+                body: String(fd.get("body")),
+                pinned: fd.get("pinned") === "on",
               });
             }}
           >

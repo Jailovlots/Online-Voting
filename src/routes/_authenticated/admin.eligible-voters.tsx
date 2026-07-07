@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useServerFn } from '@tanstack/react-start';
-import { uploadEligibleVoters, getEligibleVoters } from '@/lib/admin.functions';
+import { api } from '@/lib/api-client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -200,8 +199,6 @@ function parseWorkbook(wb: XLSX.WorkBook): ParseResult {
 
 // ── Component ────────────────────────────────────────────────────────────────
 function EligibleVotersPage() {
-  const uploadFn = useServerFn(uploadEligibleVoters);
-  const getVotersFn = useServerFn(getEligibleVoters);
   const qc = useQueryClient();
 
   const [dragging, setDragging] = useState(false);
@@ -215,7 +212,7 @@ function EligibleVotersPage() {
 
   const { data: voters, isLoading } = useQuery({
     queryKey: ['eligible-voters'],
-    queryFn: () => getVotersFn(),
+    queryFn: () => api.admin.getEligibleVoters(),
   });
 
   // ── File processing ─────────────────────────────────────────────────────
@@ -279,7 +276,7 @@ function EligibleVotersPage() {
     if (!parsed || parsed.length === 0) return;
     setUploading(true);
     try {
-      const result = await uploadFn({ data: { rows: parsed } });
+      const result = await api.admin.uploadEligibleVoters(parsed);
       toast.success(`✓ ${result.total} eligible voter records saved successfully.`);
       clearFile();
       qc.invalidateQueries({ queryKey: ['eligible-voters'] });
