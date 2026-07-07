@@ -12,25 +12,46 @@ export const signIn = createServerFn({ method: 'POST' })
     z.object({ email: z.string().email(), password: z.string().min(1) }).parse(d),
   )
   .handler(async (ctx) => {
+    console.time('login-total');
     const data = ctx.data as { email: string; password: string };
+    
+    console.time('login-db-user-fetch');
     const { rows } = await db.query<{ id: string; email: string; password_hash: string }>(
       'SELECT id, email, password_hash FROM public.users WHERE email = $1 LIMIT 1',
       [data.email.toLowerCase().trim()],
     );
-    const user = rows[0];
-    if (!user) throw new Error('Invalid email or password');
+    console.timeEnd('login-db-user-fetch');
 
+    const user = rows[0];
+    if (!user) {
+      console.timeEnd('login-total');
+      throw new Error('Invalid email or password');
+    }
+
+    console.time('login-password-verify');
     const valid = await verifyPassword(data.password, user.password_hash);
-    if (!valid) throw new Error('Invalid email or password');
+    console.timeEnd('login-password-verify');
+
+    if (!valid) {
+      console.timeEnd('login-total');
+      throw new Error('Invalid email or password');
+    }
 
     // Fetch role
+    console.time('login-db-role-fetch');
     const { rows: roleRows } = await db.query<{ role: string }>(
       'SELECT role FROM public.user_roles WHERE user_id = $1',
       [user.id],
     );
+    console.timeEnd('login-db-role-fetch');
+
     const isAdmin = roleRows.some((r: { role: string }) => r.role === 'admin');
 
+    console.time('login-token-sign');
     const token = signToken({ sub: user.id, email: user.email });
+    console.timeEnd('login-token-sign');
+
+    console.timeEnd('login-total');
     return { token, isAdmin };
   });
 
