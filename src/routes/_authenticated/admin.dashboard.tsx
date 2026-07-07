@@ -15,10 +15,10 @@ function AdminDashboard() {
   // Fetch elections list to find the active election
   const { data: elections } = useQuery({
     queryKey: ["admin-elections-list"],
-    queryFn: async () => (await api.queries.elections()) ?? [],
+    queryFn: async () => (await api.queries.elections() as any[]) ?? [],
   });
 
-  const activeElection = elections?.find((e: any) => e.status === "active") ?? elections?.[0];
+  const activeElection = (elections?.find((e: any) => e.status === "active") ?? elections?.[0]) as any;
 
   // Fetch participation report for the active election
   const { data: participation } = useQuery({

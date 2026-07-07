@@ -77,7 +77,7 @@ function ElectionsAdmin() {
 
   const { data } = useQuery({
     queryKey: ["elections"],
-    queryFn: async () => (await api.queries.elections()) ?? [],
+    queryFn: async () => (await api.queries.elections() as any[]) ?? [],
   });
 
   const [open, setOpen] = useState(false);

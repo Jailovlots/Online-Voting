@@ -12,7 +12,7 @@ function StudentLayout() {
     queryKey: ['me'],
     queryFn: async () => {
       const rolesData = await api.queries.roles();
-      const profile = await api.queries.profile();
+      const profile = await api.queries.profile() as any;
       return { profile, isAdmin: rolesData.isAdmin, isOfficer: rolesData.roles.includes('officer') };
     },
   });

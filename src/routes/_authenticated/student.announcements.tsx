@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/student/announcements")({
 function AnnouncementsPage() {
   const { data } = useQuery({
     queryKey: ["announcements"],
-    queryFn: () => api.queries.announcements(),
+    queryFn: async () => (await api.queries.announcements() as any[]) ?? [],
   });
 
 

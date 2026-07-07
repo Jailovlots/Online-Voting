@@ -23,7 +23,7 @@ function AdminAnnouncements() {
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["announcements"],
-    queryFn: async () => (await api.queries.announcements()) ?? [],
+    queryFn: async () => (await api.queries.announcements() as any[]) ?? [],
   });
 
   const [open, setOpen] = useState(false);

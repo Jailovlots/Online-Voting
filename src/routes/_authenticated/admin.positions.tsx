@@ -24,7 +24,7 @@ function Positions() {
 
   const { data } = useQuery({
     queryKey: ["positions"],
-    queryFn: async () => (await api.queries.positions()) ?? [],
+    queryFn: async () => (await api.queries.positions() as any[]) ?? [],
   });
 
   const [open, setOpen] = useState(false);

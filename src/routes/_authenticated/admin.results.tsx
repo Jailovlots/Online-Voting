@@ -34,7 +34,7 @@ function FinalResults() {
   // Fetch elections list
   const { data: elections, isLoading: isElectionsLoading } = useQuery({
     queryKey: ["admin-elections-list"],
-    queryFn: async () => (await api.queries.elections()) ?? [],
+    queryFn: async () => (await api.queries.elections() as any[]) ?? [],
   });
 
   // Automatically select the active or first election
@@ -83,7 +83,7 @@ function FinalResults() {
     setLastUpdated(new Date());
   }
 
-  const selectedElection = elections?.find((e: any) => e.id === selectedElectionId);
+  const selectedElection = elections?.find((e: any) => e.id === selectedElectionId) as any;
 
   // Filter votes by the selected election
   const filteredVotes = useMemo(() => {

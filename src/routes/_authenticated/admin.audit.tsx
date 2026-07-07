@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/admin/audit")({
 function Audit() {
   const { data } = useQuery({
     queryKey: ["audit"],
-    queryFn: async () => (await api.queries.auditLogs()) ?? [],
+    queryFn: async () => (await api.queries.auditLogs() as any[]) ?? [],
   });
 
 

@@ -28,19 +28,21 @@ function VotePage() {
         api.queries.registrationStatus(),
         api.queries.profile(),
       ]);
+      const electionAny = election as any;
+      const profileAny = profile as any;
       let voted = false;
-      if (election) {
-        const r = await api.voting.hasVoted(election.id);
+      if (electionAny) {
+        const r = await api.voting.hasVoted(electionAny.id);
         voted = r.voted;
       }
       return {
         positions: (positions as any) ?? [],
         candidates: (candidates as any) ?? [],
-        election: election as any,
+        election: electionAny,
         voted,
-        isApproved: registration?.isApproved ?? false,
-        yearLevel: profile?.year_level ?? null,
-        course: (String(profile?.course ?? "")).trim().toUpperCase(),
+        isApproved: (registration as any)?.isApproved ?? false,
+        yearLevel: (profileAny?.year_level ?? null) as number | null,
+        course: (String(profileAny?.course ?? "")).trim().toUpperCase(),
       };
     },
     staleTime: 0,

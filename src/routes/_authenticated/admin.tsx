@@ -21,7 +21,7 @@ function AdminLayout() {
     queryKey: ['me', 'admin'],
     queryFn: async () => {
       const rolesData = await api.queries.roles();
-      const profile = await api.queries.profile();
+      const profile = await api.queries.profile() as any;
       return {
         profile,
         isAdmin: rolesData.isAdmin,

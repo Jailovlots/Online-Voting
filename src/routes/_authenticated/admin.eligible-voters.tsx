@@ -212,7 +212,7 @@ function EligibleVotersPage() {
 
   const { data: voters, isLoading } = useQuery({
     queryKey: ['eligible-voters'],
-    queryFn: () => api.admin.getEligibleVoters(),
+    queryFn: async () => (await api.admin.getEligibleVoters() as any[]) ?? [],
   });
 
   // ── File processing ─────────────────────────────────────────────────────
