@@ -40,15 +40,18 @@ export function getDb(): Pool {
         );
       }
 
+      const isNeonOrVercel = host.includes('neon.tech') || host.includes('vercel-storage.com');
+
       _pool = new Pool({
         host,
         port,
         user,
         password,
         database,
-        max: 50, // Support up to 50 simultaneous DB connections for ~200 concurrent users
-        idleTimeoutMillis: 30000, // Release idle connections after 30 seconds
-        connectionTimeoutMillis: 5000, // Fail fast if the pool is exhausted (instead of hanging)
+        ssl: isNeonOrVercel ? { rejectUnauthorized: false } : undefined,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 15000,
       });
     }
   }
